@@ -6,10 +6,12 @@ import urllib.parse
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from dotenv import load_dotenv
+from serpapi import GoogleSearch
 
 load_dotenv()
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 sessions = {}
 
 class MyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -188,7 +190,7 @@ class MyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
     def handle_product_search(self):
-        """Handle product search requests and return mock data"""
+        """Handle product search requests using Google Search via SerpAPI"""
         user = self.get_current_user()
         
         if not user:
@@ -203,65 +205,65 @@ class MyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         query_params = urllib.parse.parse_qs(parsed_url.query)
         product_name = query_params.get('product_search', [''])[0]
         
-        # Mock product data
-        mock_products = [
-            {
-                "id": 1,
-                "name": "Wireless Bluetooth Headphones",
-                "price": "$79.99",
-                "rating": 4.5,
-                "image": "https://via.placeholder.com/200x200?text=Headphones",
-                "description": "High-quality wireless headphones with noise cancellation"
-            },
-            {
-                "id": 2,
-                "name": "Smart Watch",
-                "price": "$199.99",
-                "rating": 4.3,
-                "image": "https://via.placeholder.com/200x200?text=Smart+Watch",
-                "description": "Feature-rich smartwatch with health monitoring"
-            },
-            {
-                "id": 3,
-                "name": "USB-C Cable",
-                "price": "$12.99",
-                "rating": 4.8,
-                "image": "https://via.placeholder.com/200x200?text=USB+Cable",
-                "description": "Fast charging USB-C cable, 6 feet long"
-            },
-            {
-                "id": 4,
-                "name": "Laptop Stand",
-                "price": "$45.99",
-                "rating": 4.6,
-                "image": "https://via.placeholder.com/200x200?text=Laptop+Stand",
-                "description": "Adjustable aluminum laptop stand for ergonomic working"
-            },
-            {
-                "id": 5,
-                "name": "Wireless Mouse",
-                "price": "$29.99",
-                "rating": 4.4,
-                "image": "https://via.placeholder.com/200x200?text=Mouse",
-                "description": "Ergonomic wireless mouse with long battery life"
-            }
-        ]
+        products = []
+        error_message = ""
+        
+        if product_name and SERPAPI_KEY:
+            try:
+                # Search for products using SerpAPI Google Shopping
+                params = {
+                    "engine": "google_shopping",
+                    "q": product_name,
+                    "api_key": SERPAPI_KEY,
+                    "num": 10  # Limit to 10 results
+                }
+                
+                search = GoogleSearch(params)
+                results = search.get_dict()
+                
+                if "shopping_results" in results:
+                    for idx, item in enumerate(results["shopping_results"][:10]):
+                        product = {
+                            "id": idx + 1,
+                            "name": item.get("title", "Unknown Product"),
+                            "price": item.get("price", "Price not available"),
+                            "source": item.get("source", "Unknown"),
+                            "link": item.get("link", "#"),
+                            "product_link": item.get("product_link", "#"),
+                            "thumbnail": item.get("thumbnail", ""),
+                            "rating": item.get("rating", 0),
+                            "reviews": item.get("reviews", 0)
+                        }
+                        products.append(product)
+                else:
+                    error_message = "No shopping results found."
+                    
+            except Exception as e:
+                error_message = f"Search error: {str(e)}"
+        elif not SERPAPI_KEY:
+            error_message = "SerpAPI key not configured. Please add SERPAPI_KEY to your .env file."
         
         # Generate HTML response
         products_html = ""
-        if mock_products:
+        if products:
             products_html = "<ul>"
-            for product in mock_products:
+            for product in products:
+                rating_stars = "⭐" * int(product['rating']) if product['rating'] else "No rating"
+                thumbnail_html = f'<img src="{product["thumbnail"]}" alt="{product["name"]}" width="100">' if product["thumbnail"] else ""
                 products_html += f"""
                 <li>
-                    <h3>{product['name']}</h3>
+                    <h3><a href="{product['product_link']}" target="_blank">{product['name']}</a></h3>
+                    {thumbnail_html}
                     <p>Price: {product['price']}</p>
-                    <p>Rating: {'⭐' * int(product['rating'])} ({product['rating']}/5)</p>
-                    <p>{product['description']}</p>
-                    <button>Add to Cart</button>
+                    <p>Source: {product['source']}</p>
+                    <p>Rating: {rating_stars} ({product['reviews']} reviews)</p>
                 </li>
                 """
             products_html += "</ul>"
+        elif error_message:
+            products_html = f"<p>Error: {error_message}</p>"
+        elif not product_name:
+            products_html = "<p>Please enter a product name to search.</p>"
         else:
             products_html = f"<p>No products found for '{product_name}'. Try a different search term.</p>"
         
@@ -284,7 +286,7 @@ class MyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 <button type="submit">Search</button>
             </form>
             
-            <h2>Search Results{f" for '{product_name}'" if product_name else " - All Products"}</h2>
+            <h2>Search Results{f" for '{product_name}'" if product_name else ""}</h2>
             {products_html}
         </body>
         </html>
