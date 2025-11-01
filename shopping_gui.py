@@ -5,9 +5,11 @@ Provides graphical interface for login, product search, and results display
 import wx
 import wx.lib.scrolledpanel as scrolled
 from client import ShoppingClient
-from constants import IP, PORT
+from constants import IP, PORT, SUPPORTED_IMAGE_FORMATS
 import threading
 import webbrowser
+import os
+from PIL import Image
 
 
 class ShoppingGUI(wx.Frame):
@@ -147,24 +149,43 @@ class ShoppingGUI(wx.Frame):
         search_panel = wx.Panel(self.main_panel)
         search_sizer = wx.BoxSizer(wx.VERTICAL)
         
-        search_label = wx.StaticText(search_panel, label="Search Products:")
+        search_label = wx.StaticText(search_panel, label="Search Products by Image:")
         search_label_font = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         search_label.SetFont(search_label_font)
         search_sizer.Add(search_label, 0, wx.ALL, 5)
         
-        # Search input
-        search_input_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.search_entry = wx.TextCtrl(search_panel, size=(400, -1), style=wx.TE_PROCESS_ENTER)
-        self.search_entry.Bind(wx.EVT_TEXT_ENTER, self.on_search)
-        search_input_sizer.Add(self.search_entry, 0, wx.ALL, 5)
+        # Image upload section
+        upload_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        search_btn = wx.Button(search_panel, label="Search")
-        search_btn.SetBackgroundColour(wx.Colour(76, 175, 80))
-        search_btn.SetForegroundColour(wx.Colour(255, 255, 255))
-        search_btn.Bind(wx.EVT_BUTTON, self.on_search)
-        search_input_sizer.Add(search_btn, 0, wx.ALL, 5)
+        # Upload button
+        upload_btn = wx.Button(search_panel, label="📷 Select Image")
+        upload_btn.SetBackgroundColour(wx.Colour(33, 150, 243))
+        upload_btn.SetForegroundColour(wx.Colour(255, 255, 255))
+        upload_btn.Bind(wx.EVT_BUTTON, self.on_select_image)
+        upload_sizer.Add(upload_btn, 0, wx.ALL, 5)
         
-        search_sizer.Add(search_input_sizer, 0, wx.ALL, 5)
+        # Selected image label
+        self.image_path_label = wx.StaticText(search_panel, label="No image selected")
+        self.image_path_label.SetForegroundColour(wx.Colour(128, 128, 128))
+        upload_sizer.Add(self.image_path_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        
+        # Search button (disabled until image is selected)
+        self.search_btn = wx.Button(search_panel, label="Search by Image")
+        self.search_btn.SetBackgroundColour(wx.Colour(76, 175, 80))
+        self.search_btn.SetForegroundColour(wx.Colour(255, 255, 255))
+        self.search_btn.Bind(wx.EVT_BUTTON, self.on_image_search)
+        self.search_btn.Enable(False)
+        upload_sizer.Add(self.search_btn, 0, wx.ALL, 5)
+        
+        search_sizer.Add(upload_sizer, 0, wx.ALL, 5)
+        
+        # Image preview
+        self.image_preview = wx.StaticBitmap(search_panel)
+        search_sizer.Add(self.image_preview, 0, wx.ALL | wx.ALIGN_CENTER, 5)
+        
+        # Store selected image path
+        self.selected_image_path = None
+        
         search_panel.SetSizer(search_sizer)
         self.main_sizer.Add(search_panel, 0, wx.EXPAND | wx.ALL, 10)
         
@@ -189,7 +210,7 @@ class ShoppingGUI(wx.Frame):
         """Show initial message in results area"""
         self.results_sizer.Clear(True)
         
-        msg = wx.StaticText(self.results_panel, label="Enter a product name to search...")
+        msg = wx.StaticText(self.results_panel, label="Select an image to search for similar products...")
         msg_font = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         msg.SetFont(msg_font)
         msg.SetForegroundColour(wx.Colour(128, 128, 128))
@@ -198,8 +219,114 @@ class ShoppingGUI(wx.Frame):
         self.results_panel.SetupScrolling()
         self.results_panel.Layout()
     
+    def on_select_image(self, event):
+        """Handle image selection"""
+        # Create file dialog for image selection
+        wildcard = "Image files (*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.webp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.webp"
+        
+        dialog = wx.FileDialog(
+            self,
+            message="Choose an image file",
+            wildcard=wildcard,
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+        )
+        
+        if dialog.ShowModal() == wx.ID_OK:
+            self.selected_image_path = dialog.GetPath()
+            filename = os.path.basename(self.selected_image_path)
+            self.image_path_label.SetLabel(f"Selected: {filename}")
+            self.search_btn.Enable(True)
+            
+            # Show image preview
+            try:
+                img = Image.open(self.selected_image_path)
+                
+                # Resize for preview (max 200x200)
+                img.thumbnail((200, 200), Image.Resampling.LANCZOS)
+                
+                # Convert to wx.Image
+                width, height = img.size
+                wx_image = wx.Image(width, height)
+                wx_image.SetData(img.convert('RGB').tobytes())
+                
+                # Set to preview
+                bitmap = wx.Bitmap(wx_image)
+                self.image_preview.SetBitmap(bitmap)
+                
+            except Exception as e:
+                wx.MessageBox(f"Could not load image preview: {str(e)}", "Warning", wx.OK | wx.ICON_WARNING)
+        
+        dialog.Destroy()
+    
+    def on_image_search(self, event):
+        """Handle image-based product search"""
+        if not self.selected_image_path:
+            wx.MessageBox("Please select an image first", "Warning", wx.OK | wx.ICON_WARNING)
+            return
+        
+        # Clear previous results
+        self.results_sizer.Clear(True)
+        
+        # Show loading message
+        loading = wx.StaticText(self.results_panel, label="Analyzing image and searching...")
+        loading_font = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        loading.SetFont(loading_font)
+        self.results_sizer.Add(loading, 0, wx.ALIGN_CENTER | wx.ALL, 20)
+        self.results_panel.Layout()
+        
+        # Search in background thread
+        def search_thread():
+            products, search_terms = self.client.image_search(self.selected_image_path)
+            wx.CallAfter(self.display_image_results, products, search_terms)
+        
+        threading.Thread(target=search_thread, daemon=True).start()
+    
+    def display_image_results(self, products, search_terms):
+        """Display search results from image search"""
+        # Clear loading message
+        self.results_sizer.Clear(True)
+        
+        # Check if there was an error
+        if products is None:
+            error_msg = wx.StaticText(self.results_panel, label=f"Error: {search_terms}")
+            error_font = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+            error_msg.SetFont(error_font)
+            error_msg.SetForegroundColour(wx.Colour(255, 0, 0))
+            self.results_sizer.Add(error_msg, 0, wx.ALIGN_CENTER | wx.ALL, 50)
+            self.results_panel.SetupScrolling()
+            self.results_panel.Layout()
+            return
+        
+        # Show extracted search terms
+        terms_label = wx.StaticText(self.results_panel, label=f"AI detected: {search_terms}")
+        terms_font = wx.Font(11, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_BOLD)
+        terms_label.SetFont(terms_font)
+        terms_label.SetForegroundColour(wx.Colour(33, 150, 243))
+        self.results_sizer.Add(terms_label, 0, wx.ALL, 10)
+        
+        # Add separator
+        line = wx.StaticLine(self.results_panel)
+        self.results_sizer.Add(line, 0, wx.EXPAND | wx.ALL, 10)
+        
+        if not products or len(products) == 0:
+            no_results = wx.StaticText(self.results_panel, label=f"No products found for '{search_terms}'")
+            no_results_font = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+            no_results.SetFont(no_results_font)
+            no_results.SetForegroundColour(wx.Colour(128, 128, 128))
+            self.results_sizer.Add(no_results, 0, wx.ALIGN_CENTER | wx.ALL, 50)
+            self.results_panel.SetupScrolling()
+            self.results_panel.Layout()
+            return
+        
+        # Display products
+        for i, product in enumerate(products):
+            self.create_product_card(product)
+        
+        self.results_panel.SetupScrolling()
+        self.results_panel.Layout()
+    
     def on_search(self, event):
-        """Handle product search"""
+        """Handle product search (keeping old text search for compatibility)"""
         query = self.search_entry.GetValue().strip()
         
         if not query:

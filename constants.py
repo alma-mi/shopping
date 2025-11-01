@@ -20,3 +20,7 @@ SESSIONS = {}
 
 # EOF marker for file transfers
 EOF = b'EOF'
+
+# Image transfer settings
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB max image size
+SUPPORTED_IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']

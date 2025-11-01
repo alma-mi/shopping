@@ -4,9 +4,11 @@ Handles authentication, product search, and session management
 """
 import uuid
 import time
-from constants import USERS, SESSIONS
+from constants import USERS, SESSIONS, MAX_IMAGE_SIZE
 from google_search import google_search_for_product
+from chatgpt_search import analyze_image_for_products
 import json
+import protocol
 
 
 class Methods(object):
@@ -122,6 +124,103 @@ class Methods(object):
             "active_sessions": len(SESSIONS),
             "sessions": list(SESSIONS.keys())
         })
+    
+    @staticmethod
+    def IMAGE_SEARCH(my_socket, params, address):
+        """
+        Search for products using an uploaded image
+        1. Receives image data from client
+        2. Uses GPT-4 Vision to analyze image and extract search terms
+        3. Searches for products using extracted terms
+        
+        params: [session_id]
+        Returns: JSON with search terms and product list or error
+        """
+        if not params or len(params) < 1:
+            return json.dumps({"status": "error", "message": "Session ID required"})
+        
+        session_id = params[0]
+        
+        # Validate session
+        if session_id not in SESSIONS:
+            return json.dumps({"status": "error", "message": "Invalid session. Please login again."})
+        
+        try:
+            # Receive image size
+            size_data = protocol.Protocol.recv(my_socket)
+            if not size_data:
+                return json.dumps({"status": "error", "message": "Failed to receive image size"})
+            
+            image_size = int(size_data.decode())
+            
+            # Check image size limit
+            if image_size > MAX_IMAGE_SIZE:
+                return json.dumps({
+                    "status": "error", 
+                    "message": f"Image too large. Max size is {MAX_IMAGE_SIZE / (1024*1024)}MB"
+                })
+            
+            # Receive image data
+            image_data = b""
+            while len(image_data) < image_size:
+                chunk = my_socket.recv(min(4096, image_size - len(image_data)))
+                if not chunk:
+                    break
+                image_data += chunk
+            
+            if len(image_data) != image_size:
+                return json.dumps({
+                    "status": "error", 
+                    "message": f"Incomplete image data. Expected {image_size}, got {len(image_data)}"
+                })
+            
+            # Analyze image with GPT-4 Vision
+            search_terms, error = analyze_image_for_products(image_bytes=image_data)
+            
+            if error:
+                return json.dumps({
+                    "status": "error",
+                    "message": f"Image analysis failed: {error}"
+                })
+            
+            if not search_terms:
+                return json.dumps({
+                    "status": "error",
+                    "message": "Could not extract search terms from image"
+                })
+            
+            # Search for products using extracted terms
+            products, search_error = google_search_for_product(search_terms)
+            
+            if search_error:
+                return json.dumps({
+                    "status": "error",
+                    "message": search_error,
+                    "search_terms": search_terms
+                })
+            
+            if not products:
+                return json.dumps({
+                    "status": "success",
+                    "products": [],
+                    "search_terms": search_terms,
+                    "message": f"No products found for '{search_terms}'"
+                })
+            
+            return json.dumps({
+                "status": "success",
+                "products": products,
+                "search_terms": search_terms,
+                "query": search_terms,
+                "count": len(products),
+                "message": f"Found {len(products)} products for '{search_terms}'"
+            })
+            
+        except Exception as e:
+            return json.dumps({
+                "status": "error",
+                "message": f"Error processing image: {str(e)}"
+            })
     
     @staticmethod
     def EXIT(my_socket, params, address):

@@ -157,6 +157,7 @@ def main():
     print("Available commands:")
     print("  - LOGIN username password")
     print("  - SEARCH_PRODUCT session_id query")
+    print("  - IMAGE_SEARCH session_id (followed by image data)")
     print("  - LOGOUT session_id")
     print("  - EXIT")
     print("=" * 50)
