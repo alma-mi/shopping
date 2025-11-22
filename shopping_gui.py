@@ -158,7 +158,7 @@ class ShoppingGUI(wx.Frame):
         upload_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
         # Upload button
-        upload_btn = wx.Button(search_panel, label="📷 Select Image")
+        upload_btn = wx.Button(search_panel, label="Select Image")
         upload_btn.SetBackgroundColour(wx.Colour(33, 150, 243))
         upload_btn.SetForegroundColour(wx.Colour(255, 255, 255))
         upload_btn.Bind(wx.EVT_BUTTON, self.on_select_image)
@@ -403,7 +403,7 @@ class ShoppingGUI(wx.Frame):
         rating = product.get('rating', 0)
         reviews = product.get('reviews', 0)
         if rating:
-            stars = "⭐" * int(rating)
+            stars = "*" * int(rating)
             rating_label = wx.StaticText(card, label=f"{stars} ({reviews} reviews)")
             card_sizer.Add(rating_label, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
         

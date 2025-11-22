@@ -1,6 +1,8 @@
 import os
 from serpapi import GoogleSearch
 
+ADD = 1
+
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
 def google_search_for_product(product_name):
@@ -23,7 +25,7 @@ def google_search_for_product(product_name):
             if "shopping_results" in results:
                 for idx, item in enumerate(results["shopping_results"][:10]):
                     product = {
-                        "id": idx + 1,
+                        "id": idx + ADD,
                         "name": item.get("title", "Unknown Product"),
                         "price": item.get("price", "Price not available"),
                         "source": item.get("source", "Unknown"),
@@ -34,6 +36,8 @@ def google_search_for_product(product_name):
                         "reviews": item.get("reviews", 0)
                     }
                     products.append(product)
+            elif "error" in results:
+                error_message = results["error"]
             else:
                 error_message = "No shopping results found."
                 

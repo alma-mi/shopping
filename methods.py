@@ -10,7 +10,9 @@ from chatgpt_search import analyze_image_for_products
 import json
 import protocol
 
-
+MAX_PARAMS = 2
+MIN_PARAMS = 0 
+PARAMS_ONE = 1 
 class Methods(object):
     
     @staticmethod
@@ -20,11 +22,11 @@ class Methods(object):
         params: [username, password]
         Returns: JSON with session_id or error
         """
-        if not params or len(params) < 2:
+        if not params or len(params) < MAX_PARAMS:
             return json.dumps({"status": "error", "message": "Username and password required"})
         
-        username = params[0]
-        password = params[1]
+        username = params[MIN_PARAMS]
+        password = params[PARAMS_ONE]
         
         # Check credentials
         if username in USERS and USERS[username] == password:
@@ -55,11 +57,11 @@ class Methods(object):
         params: [session_id, product_query]
         Returns: JSON with product list or error
         """
-        if not params or len(params) < 2:
+        if not params or len(params) < MAX_PARAMS:
             return json.dumps({"status": "error", "message": "Session ID and product query required"})
         
-        session_id = params[0]
-        product_query = ' '.join(params[1:])  # Join remaining params as query
+        session_id = params[MIN_PARAMS]
+        product_query = ' '.join(params[PARAMS_ONE:])  # Join remaining params as query
         
         # Validate session
         if session_id not in SESSIONS:
@@ -95,10 +97,10 @@ class Methods(object):
         params: [session_id]
         Returns: JSON with success message
         """
-        if not params or len(params) < 1:
+        if not params or len(params) < PARAMS_ONE:
             return json.dumps({"status": "error", "message": "Session ID required"})
         
-        session_id = params[0]
+        session_id = params[MIN_PARAMS]
         
         if session_id in SESSIONS:
             username = SESSIONS[session_id]["username"]
@@ -136,10 +138,10 @@ class Methods(object):
         params: [session_id]
         Returns: JSON with search terms and product list or error
         """
-        if not params or len(params) < 1:
+        if not params or len(params) < PARAMS_ONE:
             return json.dumps({"status": "error", "message": "Session ID required"})
         
-        session_id = params[0]
+        session_id = params[MIN_PARAMS]
         
         # Validate session
         if session_id not in SESSIONS:
