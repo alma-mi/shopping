@@ -67,6 +67,18 @@ class ShoppingClient(object):
             return True
         return False
 
+    def create_user(self, username, password):
+        """
+        Create a new user account
+        Returns: True if successful, False otherwise
+        """
+        command = f"CREATE_USER {username} {password}"
+        response = self.send_command(command)
+        
+        if response and response.get("status") == "success":
+            return True
+        return False
+
     def search_product(self, query):
         """
         Search for products

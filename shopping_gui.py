@@ -77,6 +77,13 @@ class ShoppingGUI(wx.Frame):
         login_btn.Bind(wx.EVT_BUTTON, self.on_login)
         login_sizer.Add(login_btn, 0, wx.ALIGN_CENTER | wx.ALL, 20)
         
+        # Create new user button
+        create_user_btn = wx.Button(self.main_panel, label="Create New User", size=(200, 40))
+        create_user_btn.SetBackgroundColour(wx.Colour(156, 39, 176))
+        create_user_btn.SetForegroundColour(wx.Colour(255, 255, 255))
+        create_user_btn.Bind(wx.EVT_BUTTON, self.on_create_user)
+        login_sizer.Add(create_user_btn, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        
         # Info text
         info_text = wx.StaticText(self.main_panel, 
                                  label="Default credentials:\nUsername: admin | Password: admin123\nUsername: user | Password: password")
@@ -117,6 +124,77 @@ class ShoppingGUI(wx.Frame):
                 self.client = None
         except Exception as e:
             wx.MessageBox(f"Could not connect to server:\n{str(e)}", "Connection Error", wx.OK | wx.ICON_ERROR)
+    
+    def on_create_user(self, event):
+        """Handle create new user button click"""
+        # Create a dialog for user registration
+        dialog = wx.Dialog(self, title="Create New User", size=(400, 250))
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        # Username field
+        username_label = wx.StaticText(dialog, label="Username:")
+        sizer.Add(username_label, 0, wx.ALL, 5)
+        
+        username_entry = wx.TextCtrl(dialog, size=(350, -1))
+        sizer.Add(username_entry, 0, wx.ALL | wx.EXPAND, 5)
+        
+        # Password field
+        password_label = wx.StaticText(dialog, label="Password:")
+        sizer.Add(password_label, 0, wx.ALL, 5)
+        
+        password_entry = wx.TextCtrl(dialog, size=(350, -1), style=wx.TE_PASSWORD)
+        sizer.Add(password_entry, 0, wx.ALL | wx.EXPAND, 5)
+        
+        # Confirm password field
+        confirm_label = wx.StaticText(dialog, label="Confirm Password:")
+        sizer.Add(confirm_label, 0, wx.ALL, 5)
+        
+        confirm_entry = wx.TextCtrl(dialog, size=(350, -1), style=wx.TE_PASSWORD)
+        sizer.Add(confirm_entry, 0, wx.ALL | wx.EXPAND, 5)
+        
+        # Buttons
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        def on_create():
+            new_username = username_entry.GetValue().strip()
+            new_password = password_entry.GetValue().strip()
+            confirm_password = confirm_entry.GetValue().strip()
+            
+            if not new_username or not new_password:
+                wx.MessageBox("Please enter username and password", "Error", wx.OK | wx.ICON_ERROR)
+                return
+            
+            if new_password != confirm_password:
+                wx.MessageBox("Passwords do not match", "Error", wx.OK | wx.ICON_ERROR)
+                return
+            
+            try:
+                client = ShoppingClient(IP, PORT)
+                success = client.create_user(new_username, new_password)
+                client.close()
+                
+                if success:
+                    wx.MessageBox(f"User '{new_username}' created successfully!", "Success", wx.OK | wx.ICON_INFORMATION)
+                    dialog.EndModal(wx.ID_OK)
+                else:
+                    wx.MessageBox("Failed to create user. Username may already exist.", "Error", wx.OK | wx.ICON_ERROR)
+            except Exception as e:
+                wx.MessageBox(f"Error creating user:\n{str(e)}", "Connection Error", wx.OK | wx.ICON_ERROR)
+        
+        create_btn = wx.Button(dialog, label="Create")
+        create_btn.Bind(wx.EVT_BUTTON, lambda e: on_create())
+        button_sizer.Add(create_btn, 0, wx.ALL, 5)
+        
+        cancel_btn = wx.Button(dialog, label="Cancel")
+        cancel_btn.Bind(wx.EVT_BUTTON, lambda e: dialog.EndModal(wx.ID_CANCEL))
+        button_sizer.Add(cancel_btn, 0, wx.ALL, 5)
+        
+        sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        
+        dialog.SetSizer(sizer)
+        dialog.ShowModal()
+        dialog.Destroy()
     
     def show_shopping_screen(self):
         """Display main shopping interface"""

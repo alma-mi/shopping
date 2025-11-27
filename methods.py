@@ -9,7 +9,7 @@ from google_search import google_search_for_product
 from chatgpt_search import analyze_image_for_products
 import json
 import protocol
-from db import verify_user, get_user
+from db import verify_user, get_user, add_user
 
 MAX_PARAMS = 2
 MIN_PARAMS = 0 
@@ -52,6 +52,42 @@ class Methods(object):
             "username": username,
             "message": f"Welcome, {username}!"
         })
+    
+    @staticmethod
+    def CREATE_USER(my_socket, params, address):
+        """
+        Create a new user account
+        params: [username, password]
+        Returns: JSON with success or error
+        """
+        if not params or len(params) < MAX_PARAMS:
+            return json.dumps({"status": "error", "message": "Username and password required"})
+        
+        username = params[MIN_PARAMS]
+        password = params[PARAMS_ONE]
+        
+        # Validate inputs
+        if not username or not password:
+            return json.dumps({"status": "error", "message": "Username and password cannot be empty"})
+        
+        # Check if user already exists
+        existing_user = get_user(username)
+        if existing_user is not None:
+            return json.dumps({"status": "error", "message": "Username already exists"})
+        
+        # Add user to database
+        success = add_user(username, password)
+        
+        if success:
+            return json.dumps({
+                "status": "success",
+                "message": f"User '{username}' created successfully"
+            })
+        else:
+            return json.dumps({
+                "status": "error",
+                "message": "Failed to create user"
+            })
     
     @staticmethod
     def SEARCH_PRODUCT(my_socket, params, address):
