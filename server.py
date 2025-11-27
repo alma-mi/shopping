@@ -38,7 +38,7 @@ class ShoppingServer(object):
             while True:
                 client_socket, address = self.server_socket.accept()
                 print(f"Client connected from {address}")
-                
+
                 # Handle each client in a separate thread
                 client_thread = threading.Thread(
                     target=self.handle_single_client,
@@ -46,7 +46,7 @@ class ShoppingServer(object):
                 )
                 client_thread.daemon = True
                 client_thread.start()
-                
+
         except KeyboardInterrupt:
             print("\nServer shutting down...")
             self.server_socket.close()
@@ -62,21 +62,21 @@ class ShoppingServer(object):
             while request != 'EXIT':
                 # Receive and parse request
                 request, params = self.receive_client_request(client_socket, address)
-                
+
                 if not request:
                     break
-                
+
                 print(f"[{address}] Command: {request} {params if params else ''}")
-                
+
                 # Handle request and get response
                 response = self.handle_client_request(request, params, client_socket, address)
-                
+
                 # Send response
                 self.send_response_to_client(response, client_socket)
-                
+
                 if request == 'EXIT':
                     break
-                    
+
         except socket.error as msg:
             print(f"Socket error with {address}: {msg}")
         except Exception as msg:
@@ -93,23 +93,23 @@ class ShoppingServer(object):
         """
         try:
             request = protocol.Protocol.recv(client_socket)
-            
+
             if not request:
                 return None, None
-            
+
             request_str = request.decode().strip()
-            
+
             if not request_str:
                 return None, None
-            
+
             # Split into command and parameters
             parts = request_str.split()
-            
+
             if len(parts) > MAX:
                 return parts[PHARAMS_FIRST].upper(), parts[PHARAMS_SECOND:]
             else:
                 return parts[PHARAMS_FIRST].upper(), None
-                
+
         except socket.error as msg:
             print(f"Socket error receiving from {address}: {msg}")
             return None, None

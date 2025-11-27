@@ -35,16 +35,16 @@ class ShoppingClient(object):
         try:
             # Send command
             protocol.Protocol.send(self.my_socket, command)
-            
+
             # Receive response
             response = protocol.Protocol.recv(self.my_socket)
-            
+
             if not response:
                 return None
-            
+
             # Parse JSON response
             return json.loads(response.decode())
-            
+
         except socket.error as msg:
             print(f"Socket error: {msg}")
             return None
@@ -62,7 +62,7 @@ class ShoppingClient(object):
         """
         command = f"LOGIN {username} {password}"
         response = self.send_command(command)
-        
+
         if response and response.get("status") == "success":
             self.session_id = response.get("session_id")
             self.username = response.get("username")
@@ -76,7 +76,7 @@ class ShoppingClient(object):
         """
         command = f"CREATE_USER {username} {password}"
         response = self.send_command(command)
-        
+
         if response and response.get("status") == "success":
             return True
         return False
@@ -89,10 +89,10 @@ class ShoppingClient(object):
         if not self.session_id:
             print("Not logged in")
             return None
-        
+
         command = f"SEARCH_PRODUCT {self.session_id} {query}"
         response = self.send_command(command)
-        
+
         if response and response.get("status") == "success":
             return response.get("products", [])
         return None
@@ -101,44 +101,44 @@ class ShoppingClient(object):
         """
         Search for products by uploading an image
         Image is analyzed by GPT-4 Vision to extract search terms
-        
+
         Args:
             image_path: Path to the image file
-            
-        Returns: 
+
+        Returns:
             tuple: (products_list, search_terms_used) or (None, error_message)
         """
         if not self.session_id:
             print("Not logged in")
             return None, "Not logged in"
-        
+
         try:
             # Read image file
             with open(image_path, 'rb') as f:
                 image_data = f.read()
-            
+
             # Send IMAGE_SEARCH command with session ID
             command = f"IMAGE_SEARCH {self.session_id}"
             protocol.Protocol.send(self.my_socket, command)
-            
+
             # Send image size first
             image_size = len(image_data)
             protocol.Protocol.send(self.my_socket, str(image_size))
-            
+
             # Send image data in chunks
             for i in range(FIRST, len(image_data), CHUNK_SIZE):
                 chunk = image_data[i:i + CHUNK_SIZE]
                 self.my_socket.sendall(chunk)
-            
+
             # Receive response with search terms and products
             response = protocol.Protocol.recv(self.my_socket)
-            
+
             if not response:
                 return None, "No response from server"
-            
+
             # Parse JSON response
             result = json.loads(response.decode())
-            
+
             if result.get("status") == "success":
                 products = result.get("products", [])
                 search_terms = result.get("search_terms", "")
@@ -146,7 +146,7 @@ class ShoppingClient(object):
             else:
                 error_msg = result.get("message", "Unknown error")
                 return None, error_msg
-                
+
         except FileNotFoundError:
             error_msg = f"Image file not found: {image_path}"
             print(error_msg)
@@ -164,10 +164,10 @@ class ShoppingClient(object):
         """Logout from server"""
         if not self.session_id:
             return True
-        
+
         command = f"LOGOUT {self.session_id}"
         response = self.send_command(command)
-        
+
         if response and response.get("status") == "success":
             self.session_id = None
             self.username = None
@@ -189,14 +189,14 @@ def main():
     # Login
     username = input("Username: ")
     password = input("Password: ")
-    
+
     if client.login(username, password):
         print(f"\n✓ Logged in as {client.username}")
-        
+
         while True:
             print("\nCommands: search <query>, logout, exit")
             cmd = input("> ").strip()
-            
+
             if cmd.lower() == "exit":
                 break
             elif cmd.lower() == "logout":
@@ -206,10 +206,10 @@ def main():
             elif cmd.lower().startswith("search "):
                 query = cmd[7:]
                 products = client.search_product(query)
-                
+
                 if products:
                     print(f"\nFound {len(products)} products:")
-                    for i, product in enumerate(products[:DISPLAY_LIMIT], START):  
+                    for i, product in enumerate(products[:DISPLAY_LIMIT], START):
                         print(f"\n{i}. {product['name']}")
                         print(f"   Price: {product['price']}")
                         print(f"   Source: {product['source']}")
@@ -220,7 +220,7 @@ def main():
                 print("Unknown command")
     else:
         print("\n✗ Login failed")
-    
+
     client.close()
     print("\nDisconnected")
 

@@ -33,11 +33,11 @@ class Protocol(object):
                 return b''
             size -= len(data)
             tot_data += data
-        
+
         # Parse length
         size = int(tot_data.decode())
         tot_data = b''
-        
+
         # Read actual data
         while size > DATA_SIZE:
             data = my_socket.recv(size)
@@ -45,5 +45,5 @@ class Protocol(object):
                 return b''
             size -= len(data)
             tot_data += data
-        
+
         return tot_data
