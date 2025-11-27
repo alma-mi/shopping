@@ -16,6 +16,8 @@ MIN_PARAMS = 0
 PARAMS_ONE = 1
 IMAGE_CHUNK_SIZE = 4096
 BYTE = 1024
+
+
 class Methods(object):
 
     @staticmethod
@@ -26,7 +28,8 @@ class Methods(object):
         Returns: JSON with session_id or error
         """
         if not params or len(params) < MAX_PARAMS:
-            return json.dumps({"status": "error", "message": "Username and password required"})
+            msg = "Username and password required"
+            return json.dumps({"status": "error", "message": msg})
 
         username = params[MIN_PARAMS]
         password = params[PARAMS_ONE]
@@ -34,11 +37,13 @@ class Methods(object):
         # Check credentials using DB helpers
         user_record = get_user(username)
         if user_record is None:
-            return json.dumps({"status": "error", "message": "User does not exist"})
+            return json.dumps(
+                {"status": "error", "message": "User does not exist"})
 
         verified = verify_user(username, password)
         if not verified:
-            return json.dumps({"status": "error", "message": "Incorrect password"})
+            return json.dumps(
+                {"status": "error", "message": "Incorrect password"})
 
         # Create session
         session_id = str(uuid.uuid4())
@@ -63,19 +68,23 @@ class Methods(object):
         Returns: JSON with success or error
         """
         if not params or len(params) < MAX_PARAMS:
-            return json.dumps({"status": "error", "message": "Username and password required"})
+            return json.dumps({"status": "error",
+                               "message": "Username and password required"})
 
         username = params[MIN_PARAMS]
         password = params[PARAMS_ONE]
 
         # Validate inputs
         if not username or not password:
-            return json.dumps({"status": "error", "message": "Username and password cannot be empty"})
+            msg = "Username and password cannot be empty"
+            return json.dumps(
+                {"status": "error", "message": msg})
 
         # Check if user already exists
         existing_user = get_user(username)
         if existing_user is not None:
-            return json.dumps({"status": "error", "message": "Username already exists"})
+            return json.dumps(
+                {"status": "error", "message": "Username already exists"})
 
         # Add user to database
         success = add_user(username, password)
@@ -99,14 +108,19 @@ class Methods(object):
         Returns: JSON with product list or error
         """
         if not params or len(params) < MAX_PARAMS:
-            return json.dumps({"status": "error", "message": "Session ID and product query required"})
+            msg = "Session ID and product query required"
+            return json.dumps(
+                {"status": "error", "message": msg})
 
         session_id = params[MIN_PARAMS]
-        product_query = ' '.join(params[PARAMS_ONE:])  # Join remaining params as query
+        # Join remaining params as query
+        product_query = ' '.join(params[PARAMS_ONE:])
 
         # Validate session
         if session_id not in SESSIONS:
-            return json.dumps({"status": "error", "message": "Invalid session. Please login again."})
+            err_msg = "Invalid session. Please login again."
+            return json.dumps(
+                {"status": "error", "message": err_msg})
 
         # Search for products
         products, error_message = google_search_for_product(product_query)
@@ -139,7 +153,8 @@ class Methods(object):
         Returns: JSON with success message
         """
         if not params or len(params) < PARAMS_ONE:
-            return json.dumps({"status": "error", "message": "Session ID required"})
+            return json.dumps(
+                {"status": "error", "message": "Session ID required"})
 
         session_id = params[MIN_PARAMS]
 
@@ -177,44 +192,55 @@ class Methods(object):
         3. Searches for products using extracted terms
         """
         if not params or len(params) < PARAMS_ONE:
-            return json.dumps({"status": "error", "message": "Session ID required"})
+            return json.dumps(
+                {"status": "error", "message": "Session ID required"})
 
         session_id = params[MIN_PARAMS]
 
         # Validate session
         if session_id not in SESSIONS:
-            return json.dumps({"status": "error", "message": "Invalid session. Please login again."})
+            err_msg = "Invalid session. Please login again."
+            return json.dumps(
+                {"status": "error", "message": err_msg})
 
         try:
             # Receive image size
             size_data = protocol.Protocol.recv(my_socket)
             if not size_data:
-                return json.dumps({"status": "error", "message": "Failed to receive image size"})
+                return json.dumps({"status": "error",
+                                   "message": "Failed to receive image size"})
 
             image_size = int(size_data.decode())
 
             # Check image size limit
             if image_size > MAX_IMAGE_SIZE:
+                size_mb = MAX_IMAGE_SIZE / (BYTE * BYTE)
+                msg = f"Image too large. Max size is {size_mb}MB"
                 return json.dumps({
                     "status": "error",
-                    "message": f"Image too large. Max size is {MAX_IMAGE_SIZE / (BYTE*BYTE)}MB"
+                    "message": msg
                 })
 
             # Receive image data
             image_data = b""
             while len(image_data) < image_size:
-                chunk = my_socket.recv(min(IMAGE_CHUNK_SIZE, image_size - len(image_data)))
+                chunk = my_socket.recv(
+                    min(IMAGE_CHUNK_SIZE, image_size - len(image_data)))
                 if not chunk:
                     break
                 image_data += chunk
 
             if len(image_data) != image_size:
+                exp = image_size
+                got = len(image_data)
+                msg = f"Incomplete image data. Expected {exp}, got {got}"
                 return json.dumps({
                     "status": "error",
-                    "message": f"Incomplete image data. Expected {image_size}, got {len(image_data)}"
+                    "message": msg
                 })
 
-            search_terms, error = analyze_image_for_products(image_bytes=image_data)
+            search_terms, error = analyze_image_for_products(
+                image_bytes=image_data)
 
             if error:
                 return json.dumps({
@@ -252,7 +278,10 @@ class Methods(object):
                 "search_terms": search_terms,
                 "query": search_terms,
                 "count": len(products),
-                "message": f"Found {len(products)} products for '{search_terms}'"
+                "message": (
+                    f"Found {len(products)} products for "
+                    f"'{search_terms}'"
+                )
             })
 
         except Exception as e:

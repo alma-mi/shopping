@@ -63,7 +63,8 @@ def verify_user(username: str, password: str):
     conn = get_conn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT password FROM users WHERE username = ?", (username,))
+        cur.execute(
+            "SELECT password FROM users WHERE username = ?", (username,))
         row = cur.fetchone()
         if not row:
             return False
@@ -77,7 +78,9 @@ def get_user(username: str):
     conn = get_conn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT username, password FROM users WHERE username = ?", (username,))
+        cur.execute(
+            "SELECT username, password FROM users WHERE "
+            "username = ?", (username,))
         row = cur.fetchone()
         if row:
             return {"username": row[MIN], "password": row[MAX]}
@@ -87,11 +90,14 @@ def get_user(username: str):
 
 
 def change_password(username: str, new_password: str) -> bool:
-    """Change a user's password (hashes new password). Returns True if updated."""
+    """Change user password. Returns True if updated."""
     conn = get_conn()
     try:
         cur = conn.cursor()
-        cur.execute("UPDATE users SET password = ? WHERE username = ?", (new_password, username))
+        cur.execute(
+            "UPDATE users SET password = ? WHERE username = ?",
+            (new_password,
+             username))
         conn.commit()
         return cur.rowcount > MIN
     finally:
@@ -102,9 +108,16 @@ if __name__ == "__main__":
     # simple CLI to create tables and add an admin if desired
     import argparse
 
-    parser = argparse.ArgumentParser(description="Simple DB helper for users table")
+    parser = argparse.ArgumentParser(
+        description="Simple DB helper for users table")
     parser.add_argument("--init", action="store_true", help="Create tables")
-    parser.add_argument("--add", nargs=2, metavar=("USERNAME", "PASSWORD"), help="Add a user")
+    parser.add_argument(
+        "--add",
+        nargs=2,
+        metavar=(
+            "USERNAME",
+            "PASSWORD"),
+        help="Add a user")
     args = parser.parse_args()
 
     if args.init:

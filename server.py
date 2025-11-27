@@ -18,17 +18,24 @@ PHARAMS_FIRST = 0
 PHARAMS_SECOND = 1
 MAX = 1
 
+
 class ShoppingServer(object):
     def __init__(self, ip, port):
         """Initialize server socket"""
         try:
-            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.server_socket = socket.socket(
+                socket.AF_INET, socket.SOCK_STREAM
+            )
+            self.server_socket.setsockopt(
+                socket.SOL_SOCKET, socket.SO_REUSEADDR, 1
+            )
             self.server_socket.bind((ip, port))
             self.server_socket.listen(NUM_OF_LISTEN)
-            print(f"Shopping Server started on {ip}:{port}")
+            msg = f"Shopping Server started on {ip}:{port}"
+            print(msg)
         except socket.error as msg:
-            print(f'Connection failure: {msg}\nTerminating program')
+            err = f'Connection failure: {msg}\nTerminating program'
+            print(err)
             sys.exit(EXIT_CODE)
 
     def handle_clients(self):
@@ -61,15 +68,20 @@ class ShoppingServer(object):
             request = None
             while request != 'EXIT':
                 # Receive and parse request
-                request, params = self.receive_client_request(client_socket, address)
+                request, params = self.receive_client_request(
+                    client_socket, address)
 
                 if not request:
                     break
 
-                print(f"[{address}] Command: {request} {params if params else ''}")
+                print(
+                    f"[{address}] Command: {request} "
+                    f"{params if params else ''}"
+                )
 
                 # Handle request and get response
-                response = self.handle_client_request(request, params, client_socket, address)
+                response = self.handle_client_request(
+                    request, params, client_socket, address)
 
                 # Send response
                 self.send_response_to_client(response, client_socket)

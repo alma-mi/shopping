@@ -6,6 +6,7 @@ MAX_RESULTS = 10
 
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
+
 def google_search_for_product(product_name):
     products = []
     error_message = ""
@@ -24,7 +25,8 @@ def google_search_for_product(product_name):
             results = search.get_dict()
 
             if "shopping_results" in results:
-                for idx, item in enumerate(results["shopping_results"][:MAX_RESULTS]):
+                for idx, item in enumerate(
+                        results["shopping_results"][:MAX_RESULTS]):
                     product = {
                         "id": idx + ADD,
                         "name": item.get("title", "Unknown Product"),
@@ -45,6 +47,7 @@ def google_search_for_product(product_name):
         except Exception as e:
             error_message = f"Search error: {str(e)}"
     elif not SERPAPI_KEY:
-        error_message = "SerpAPI key not configured. Please add SERPAPI_KEY to your .env file."
+        msg = "SerpAPI key not configured. Add SERPAPI_KEY to "
+        error_message = msg + ".env file."
 
     return products, error_message

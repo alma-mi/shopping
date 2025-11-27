@@ -14,6 +14,7 @@ START = 1
 CHUNK_SIZE = 4096
 FIRST = 0
 
+
 class ShoppingClient(object):
     def __init__(self, ip, port):
         """Initialize client socket and connect to server"""
@@ -179,7 +180,7 @@ class ShoppingClient(object):
         try:
             self.send_command("EXIT")
             self.my_socket.close()
-        except:
+        except BaseException:
             pass
 
 
@@ -209,7 +210,9 @@ def main():
 
                 if products:
                     print(f"\nFound {len(products)} products:")
-                    for i, product in enumerate(products[:DISPLAY_LIMIT], START):
+                    for i, product in enumerate(
+                        products[:DISPLAY_LIMIT], START
+                    ):
                         print(f"\n{i}. {product['name']}")
                         print(f"   Price: {product['price']}")
                         print(f"   Source: {product['source']}")

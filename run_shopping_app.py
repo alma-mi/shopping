@@ -6,6 +6,7 @@ import subprocess
 import time
 import sys
 
+
 def main():
     print("=" * 60)
     print("Shopping App Launcher")
@@ -15,7 +16,10 @@ def main():
     print("\n[1/2] Starting server...")
     server_process = subprocess.Popen(
         [sys.executable, "server.py"],
-        creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0
+        creationflags=(
+            subprocess.CREATE_NEW_CONSOLE
+            if sys.platform == "win32" else 0
+        )
     )
 
     # Wait a bit for server to initialize
@@ -40,6 +44,7 @@ def main():
         # Clean up
         server_process.terminate()
         print("✓ Server stopped")
+
 
 if __name__ == "__main__":
     main()
