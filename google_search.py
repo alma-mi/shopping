@@ -2,6 +2,7 @@ import os
 from serpapi.google_search import GoogleSearch
 
 ADD = 1
+MAX_RESULTS = 10
 
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
@@ -16,14 +17,14 @@ def google_search_for_product(product_name):
                 "engine": "google_shopping",
                 "q": product_name,
                 "api_key": SERPAPI_KEY,
-                "num": 10  # Limit to 10 results
+                "num": MAX_RESULTS
             }
             
             search = GoogleSearch(params)
             results = search.get_dict()
             
             if "shopping_results" in results:
-                for idx, item in enumerate(results["shopping_results"][:10]):
+                for idx, item in enumerate(results["shopping_results"][:MAX_RESULTS]):
                     product = {
                         "id": idx + ADD,
                         "name": item.get("title", "Unknown Product"),

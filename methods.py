@@ -12,8 +12,10 @@ import protocol
 from db import verify_user, get_user, add_user
 
 MAX_PARAMS = 2
-MIN_PARAMS = 0 
-PARAMS_ONE = 1 
+MIN_PARAMS = 0
+PARAMS_ONE = 1
+IMAGE_CHUNK_SIZE = 4096 
+BYTE = 1024
 class Methods(object):
     
     @staticmethod
@@ -173,9 +175,6 @@ class Methods(object):
         1. Receives image data from client
         2. Uses GPT-4 Vision to analyze image and extract search terms
         3. Searches for products using extracted terms
-        
-        params: [session_id]
-        Returns: JSON with search terms and product list or error
         """
         if not params or len(params) < PARAMS_ONE:
             return json.dumps({"status": "error", "message": "Session ID required"})
@@ -198,13 +197,13 @@ class Methods(object):
             if image_size > MAX_IMAGE_SIZE:
                 return json.dumps({
                     "status": "error", 
-                    "message": f"Image too large. Max size is {MAX_IMAGE_SIZE / (1024*1024)}MB"
+                    "message": f"Image too large. Max size is {MAX_IMAGE_SIZE / (BYTE*BYTE)}MB"
                 })
             
             # Receive image data
             image_data = b""
             while len(image_data) < image_size:
-                chunk = my_socket.recv(min(4096, image_size - len(image_data)))
+                chunk = my_socket.recv(min(IMAGE_CHUNK_SIZE, image_size - len(image_data)))
                 if not chunk:
                     break
                 image_data += chunk
@@ -215,7 +214,6 @@ class Methods(object):
                     "message": f"Incomplete image data. Expected {image_size}, got {len(image_data)}"
                 })
             
-            # Analyze image with GPT-4 Vision
             search_terms, error = analyze_image_for_products(image_bytes=image_data)
             
             if error:

@@ -8,9 +8,11 @@ import json
 import protocol
 from constants import IP, PORT
 
-
-EXIT = 1
-
+EXIT_CODE = 1
+DISPLAY_LIMIT = 5
+START = 1
+CHUNK_SIZE = 4096
+FIRST = 0
 
 class ShoppingClient(object):
     def __init__(self, ip, port):
@@ -23,7 +25,7 @@ class ShoppingClient(object):
             print(f"Connected to server at {ip}:{port}")
         except socket.error as msg:
             print(f'Connection failure: {msg}\nTerminating program')
-            sys.exit(EXIT)
+            sys.exit(EXIT_CODE)
 
     def send_command(self, command):
         """
@@ -124,9 +126,8 @@ class ShoppingClient(object):
             protocol.Protocol.send(self.my_socket, str(image_size))
             
             # Send image data in chunks
-            chunk_size = 4096
-            for i in range(0, len(image_data), chunk_size):
-                chunk = image_data[i:i + chunk_size]
+            for i in range(FIRST, len(image_data), CHUNK_SIZE):
+                chunk = image_data[i:i + CHUNK_SIZE]
                 self.my_socket.sendall(chunk)
             
             # Receive response with search terms and products
@@ -208,7 +209,7 @@ def main():
                 
                 if products:
                     print(f"\nFound {len(products)} products:")
-                    for i, product in enumerate(products[:5], 1):  # Show first 5
+                    for i, product in enumerate(products[:DISPLAY_LIMIT], START):  
                         print(f"\n{i}. {product['name']}")
                         print(f"   Price: {product['price']}")
                         print(f"   Source: {product['source']}")

@@ -11,11 +11,12 @@ from db import create_tables
 import protocol
 from constants import IP, PORT
 
-
 NUM_OF_LISTEN = 5
 REQUEST_PLACE = 0
-EXIT = 1
-
+EXIT_CODE = 1
+PHARAMS_FIRST = 0
+PHARAMS_SECOND = 1
+MAX = 1
 
 class ShoppingServer(object):
     def __init__(self, ip, port):
@@ -28,7 +29,7 @@ class ShoppingServer(object):
             print(f"Shopping Server started on {ip}:{port}")
         except socket.error as msg:
             print(f'Connection failure: {msg}\nTerminating program')
-            sys.exit(EXIT)
+            sys.exit(EXIT_CODE)
 
     def handle_clients(self):
         """Accept and handle multiple client connections"""
@@ -104,10 +105,10 @@ class ShoppingServer(object):
             # Split into command and parameters
             parts = request_str.split()
             
-            if len(parts) > 1:
-                return parts[0].upper(), parts[1:]
+            if len(parts) > MAX:
+                return parts[PHARAMS_FIRST].upper(), parts[PHARAMS_SECOND:]
             else:
-                return parts[0].upper(), None
+                return parts[PHARAMS_FIRST].upper(), None
                 
         except socket.error as msg:
             print(f"Socket error receiving from {address}: {msg}")

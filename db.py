@@ -3,6 +3,9 @@ import os
 from datetime import datetime
 from passlib.hash import bcrypt
 
+
+MIN = 0
+MAX = 1
 # Database path (uses existing databaselog.db in project root by default)
 BASE_DIR = os.path.dirname(__file__)
 DB_PATH = os.path.join(BASE_DIR, "databaselog.db")
@@ -77,7 +80,7 @@ def get_user(username: str):
         cur.execute("SELECT username, password FROM users WHERE username = ?", (username,))
         row = cur.fetchone()
         if row:
-            return {"username": row[0], "password": row[1]}
+            return {"username": row[MIN], "password": row[MAX]}
         return None
     finally:
         conn.close()
@@ -90,7 +93,7 @@ def change_password(username: str, new_password: str) -> bool:
         cur = conn.cursor()
         cur.execute("UPDATE users SET password = ? WHERE username = ?", (new_password, username))
         conn.commit()
-        return cur.rowcount > 0
+        return cur.rowcount > MIN
     finally:
         conn.close()
 
