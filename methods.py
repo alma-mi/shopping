@@ -4,11 +4,12 @@ Handles authentication, product search, and session management
 """
 import uuid
 import time
-from constants import USERS, SESSIONS, MAX_IMAGE_SIZE
+from constants import SESSIONS, MAX_IMAGE_SIZE
 from google_search import google_search_for_product
 from chatgpt_search import analyze_image_for_products
 import json
 import protocol
+from db import verify_user, get_user
 
 MAX_PARAMS = 2
 MIN_PARAMS = 0 
@@ -28,27 +29,29 @@ class Methods(object):
         username = params[MIN_PARAMS]
         password = params[PARAMS_ONE]
         
-        # Check credentials
-        if username in USERS and USERS[username] == password:
-            # Create session
-            session_id = str(uuid.uuid4())
-            SESSIONS[session_id] = {
-                "username": username,
-                "login_time": time.time(),
-                "address": address
-            }
-            
-            return json.dumps({
-                "status": "success",
-                "session_id": session_id,
-                "username": username,
-                "message": f"Welcome, {username}!"
-            })
-        else:
-            return json.dumps({
-                "status": "error",
-                "message": "Invalid username or password"
-            })
+        # Check credentials using DB helpers
+        user_record = get_user(username)
+        if user_record is None:
+            return json.dumps({"status": "error", "message": "User does not exist"})
+
+        verified = verify_user(username, password)
+        if not verified:
+            return json.dumps({"status": "error", "message": "Incorrect password"})
+
+        # Create session
+        session_id = str(uuid.uuid4())
+        SESSIONS[session_id] = {
+            "username": username,
+            "login_time": time.time(),
+            "address": address
+        }
+        
+        return json.dumps({
+            "status": "success",
+            "session_id": session_id,
+            "username": username,
+            "message": f"Welcome, {username}!"
+        })
     
     @staticmethod
     def SEARCH_PRODUCT(my_socket, params, address):

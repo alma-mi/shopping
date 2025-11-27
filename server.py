@@ -7,6 +7,7 @@ import socket
 import threading
 import json
 import methods
+from db import create_tables
 import protocol
 from constants import IP, PORT
 
@@ -150,17 +151,13 @@ class ShoppingServer(object):
 
 
 def main():
-    server = ShoppingServer(IP, PORT)
-    print("=" * 50)
-    print("Shopping App Server")
-    print("=" * 50)
-    print("Available commands:")
-    print("  - LOGIN username password")
-    print("  - SEARCH_PRODUCT session_id query")
-    print("  - IMAGE_SEARCH session_id (followed by image data)")
-    print("  - LOGOUT session_id")
-    print("  - EXIT")
-    print("=" * 50)
+    # Ensure database tables exist before accepting clients
+    try:
+        create_tables()
+    except Exception:
+        pass
+
+    server = ShoppingServer("0.0.0.0", PORT)
     server.handle_clients()
 
 

@@ -173,11 +173,6 @@ class ShoppingClient(object):
 def main():
     """Test client with command line interface"""
     client = ShoppingClient(IP, PORT)
-    
-    print("=" * 50)
-    print("Shopping App Client")
-    print("=" * 50)
-    
     # Login
     username = input("Username: ")
     password = input("Password: ")
