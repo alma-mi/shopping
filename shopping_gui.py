@@ -128,33 +128,45 @@ class ShoppingGUI(wx.Frame):
     def on_create_user(self, event):
         """Handle create new user button click"""
         # Create a dialog for user registration
-        dialog = wx.Dialog(self, title="Create New User", size=(400, 250))
+        dialog = wx.Dialog(self, title="Create New User", size=(450, 320))
         
-        sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.AddSpacer(15)
         
-        # Username field
+        # Username section
         username_label = wx.StaticText(dialog, label="Username:")
-        sizer.Add(username_label, 0, wx.ALL, 5)
+        username_font = wx.Font(11, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        username_label.SetFont(username_font)
+        main_sizer.Add(username_label, 0, wx.LEFT | wx.RIGHT, 20)
+        main_sizer.AddSpacer(5)
         
-        username_entry = wx.TextCtrl(dialog, size=(350, -1))
-        sizer.Add(username_entry, 0, wx.ALL | wx.EXPAND, 5)
+        username_entry = wx.TextCtrl(dialog, size=(400, 30))
+        main_sizer.Add(username_entry, 0, wx.LEFT | wx.RIGHT, 20)
+        main_sizer.AddSpacer(15)
         
-        # Password field
+        # Password section
         password_label = wx.StaticText(dialog, label="Password:")
-        sizer.Add(password_label, 0, wx.ALL, 5)
+        password_label.SetFont(username_font)
+        main_sizer.Add(password_label, 0, wx.LEFT | wx.RIGHT, 20)
+        main_sizer.AddSpacer(5)
         
-        password_entry = wx.TextCtrl(dialog, size=(350, -1), style=wx.TE_PASSWORD)
-        sizer.Add(password_entry, 0, wx.ALL | wx.EXPAND, 5)
+        password_entry = wx.TextCtrl(dialog, size=(400, 30), style=wx.TE_PASSWORD)
+        main_sizer.Add(password_entry, 0, wx.LEFT | wx.RIGHT, 20)
+        main_sizer.AddSpacer(15)
         
-        # Confirm password field
+        # Confirm password section
         confirm_label = wx.StaticText(dialog, label="Confirm Password:")
-        sizer.Add(confirm_label, 0, wx.ALL, 5)
+        confirm_label.SetFont(username_font)
+        main_sizer.Add(confirm_label, 0, wx.LEFT | wx.RIGHT, 20)
+        main_sizer.AddSpacer(5)
         
-        confirm_entry = wx.TextCtrl(dialog, size=(350, -1), style=wx.TE_PASSWORD)
-        sizer.Add(confirm_entry, 0, wx.ALL | wx.EXPAND, 5)
+        confirm_entry = wx.TextCtrl(dialog, size=(400, 30), style=wx.TE_PASSWORD)
+        main_sizer.Add(confirm_entry, 0, wx.LEFT | wx.RIGHT, 20)
+        main_sizer.AddSpacer(20)
         
         # Buttons
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer.AddStretchSpacer(1)
         
         def on_create():
             new_username = username_entry.GetValue().strip()
@@ -182,17 +194,20 @@ class ShoppingGUI(wx.Frame):
             except Exception as e:
                 wx.MessageBox(f"Error creating user:\n{str(e)}", "Connection Error", wx.OK | wx.ICON_ERROR)
         
-        create_btn = wx.Button(dialog, label="Create")
+        create_btn = wx.Button(dialog, label="Create", size=(120, 35))
+        create_btn.SetBackgroundColour(wx.Colour(76, 175, 80))
+        create_btn.SetForegroundColour(wx.Colour(255, 255, 255))
         create_btn.Bind(wx.EVT_BUTTON, lambda e: on_create())
-        button_sizer.Add(create_btn, 0, wx.ALL, 5)
+        button_sizer.Add(create_btn, 0, wx.ALL, 10)
         
-        cancel_btn = wx.Button(dialog, label="Cancel")
+        cancel_btn = wx.Button(dialog, label="Cancel", size=(120, 35))
         cancel_btn.Bind(wx.EVT_BUTTON, lambda e: dialog.EndModal(wx.ID_CANCEL))
-        button_sizer.Add(cancel_btn, 0, wx.ALL, 5)
+        button_sizer.Add(cancel_btn, 0, wx.ALL, 10)
         
-        sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+        button_sizer.AddStretchSpacer(1)
+        main_sizer.Add(button_sizer, 0, wx.EXPAND)
         
-        dialog.SetSizer(sizer)
+        dialog.SetSizer(main_sizer)
         dialog.ShowModal()
         dialog.Destroy()
     
