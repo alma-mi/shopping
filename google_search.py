@@ -1,8 +1,13 @@
 import os
+from dotenv import load_dotenv
 from serpapi.google_search import GoogleSearch
+from constants import ONE, MAX_DISPLAY_RESULTS
 
-ADD = 1
-MAX_RESULTS = 10
+# Load environment variables from .env file
+load_dotenv()
+
+ADD = ONE
+MAX_RESULTS = MAX_DISPLAY_RESULTS
 
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 

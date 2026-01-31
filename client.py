@@ -6,13 +6,15 @@ import socket
 import sys
 import json
 import protocol
-from constants import IP, PORT
+from constants import (IP, PORT, ONE, ZERO, SOCKET_CHUNK_SIZE,
+                       MAX_DISPLAY_RESULTS)
+import key_exchange
 
 EXIT_CODE = 1
-DISPLAY_LIMIT = 5
-START = 1
-CHUNK_SIZE = 4096
-FIRST = 0
+DISPLAY_LIMIT = MAX_DISPLAY_RESULTS
+START = ONE
+CHUNK_SIZE = SOCKET_CHUNK_SIZE
+FIRST = ZERO
 
 
 class ShoppingClient(object):
@@ -20,7 +22,9 @@ class ShoppingClient(object):
         """Initialize client socket and connect to server"""
         try:
             self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.my_socket.connect((ip, port))
+            self.my_socket.connect((IP, PORT))
+            key = key_exchange.KeyExchange.send_recv_key((self.my_socket, None))
+            self.conn = (self.my_socket, key)
             self.session_id = None
             self.username = None
             print(f"Connected to server at {ip}:{port}")
@@ -35,16 +39,16 @@ class ShoppingClient(object):
         """
         try:
             # Send command
-            protocol.Protocol.send(self.my_socket, command)
+            protocol.Protocol.send(self.conn, command)
 
             # Receive response
-            response = protocol.Protocol.recv(self.my_socket)
+            response = protocol.Protocol.recv(self.conn)
 
             if not response:
                 return None
 
             # Parse JSON response
-            return json.loads(response.decode())
+            return json.loads(response)
 
         except socket.error as msg:
             print(f"Socket error: {msg}")
@@ -120,25 +124,25 @@ class ShoppingClient(object):
 
             # Send IMAGE_SEARCH command with session ID
             command = f"IMAGE_SEARCH {self.session_id}"
-            protocol.Protocol.send(self.my_socket, command)
+            protocol.Protocol.send(self.conn, command)
 
             # Send image size first
             image_size = len(image_data)
-            protocol.Protocol.send(self.my_socket, str(image_size))
+            protocol.Protocol.send(self.conn, str(image_size))
 
             # Send image data in chunks
             for i in range(FIRST, len(image_data), CHUNK_SIZE):
                 chunk = image_data[i:i + CHUNK_SIZE]
-                self.my_socket.sendall(chunk)
+                self.conn[protocol.SOCK].sendall(chunk)
 
             # Receive response with search terms and products
-            response = protocol.Protocol.recv(self.my_socket)
+            response = protocol.Protocol.recv(self.conn)
 
             if not response:
                 return None, "No response from server"
 
             # Parse JSON response
-            result = json.loads(response.decode())
+            result = json.loads(response)
 
             if result.get("status") == "success":
                 products = result.get("products", [])
@@ -179,7 +183,7 @@ class ShoppingClient(object):
         """Close connection to server"""
         try:
             self.send_command("EXIT")
-            self.my_socket.close()
+            self.conn[protocol.SOCK].close()
         except BaseException:
             pass
 

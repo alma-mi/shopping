@@ -6,8 +6,9 @@ import os
 import base64
 from openai import AzureOpenAI
 from dotenv import load_dotenv
+from constants import PARAMS_FIRST, GPT4_MAX_TOKENS, GPT4_TEMPERATURE
 
-PHARAMS_FIRST = 0
+PHARAMS_FIRST = PARAMS_FIRST
 load_dotenv()
 
 
@@ -50,90 +51,24 @@ def analyze_image_for_products(image_path=None, image_bytes=None):
             - error_message: Error message or None if successful
     """
     try:
-        # Get Azure OpenAI configuration from environment
-        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        api_version = os.getenv(
-            "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
-        )
-        deployment_name = os.getenv(
-            "AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o"
-        )
+        # Step 1: Initialize Azure client
+        client = _init_azure_client()
+        if isinstance(client, tuple):
+            return client
 
-        if not azure_endpoint:
-            err_msg = "AZURE_OPENAI_ENDPOINT not found in env vars"
-            return None, err_msg + ". Please add it to .env file"
+        # Step 2: Encode image to base64
+        base64_image = _encode_image(image_path, image_bytes)
+        if isinstance(base64_image, tuple):
+            return base64_image
 
-        if not api_key:
-            err_msg = "AZURE_OPENAI_API_KEY not found in env vars"
-            return None, err_msg + ". Please add it to .env file"
+        # Step 3: Get analysis prompt
+        prompt = _get_analysis_prompt()
 
-        # Initialize Azure OpenAI client
-        client = AzureOpenAI(
-            api_key=api_key,
-            api_version=api_version,
-            azure_endpoint=azure_endpoint,
-        )
+        # Step 4: Call GPT-4 Vision API
+        response = _call_gpt4_api(client, prompt, base64_image)
 
-        # Encode image to base64
-        if image_path:
-            base64_image = encode_image_to_base64(image_path)
-        elif image_bytes:
-            base64_image = encode_image_bytes_to_base64(image_bytes)
-        else:
-            return None, "No image provided"
-
-        # Create the prompt for GPT-4 Vision
-        prompt = (
-            "Analyze this image and identify products, items, or "
-            "objects someone might want to purchase.\n"
-            "\nYour task:\n"
-            "1. Identify main product(s) or item(s)\n"
-            "2. Note key characteristics (brand, color, etc)\n"
-            "3. Extract relevant search terms for this product\n"
-            "\nProvide a concise search query (2-6 words).\n"
-            "Only return search terms. Make it specific for e-comm.\n"
-            "\nExamples:\n"
-            "- Red Nike shoe: 'red Nike running shoes'\n"
-            "- Laptop: 'silver laptop computer'\n"
-            "- Coffee maker: 'stainless steel coffee maker'\n"
-            "\nReturn only the search query, no explanation."
-        )
-
-        # Call Azure OpenAI GPT-4 Vision API
-        response = client.chat.completions.create(
-            model=deployment_name,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": (
-                                    "data:image/jpeg;base64,"
-                                    f"{base64_image}"
-                                )
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens=100,
-            temperature=0.3
-        )
-
-        # Extract search terms from response
-        search_terms = (
-            response.choices[PHARAMS_FIRST].message.content.strip()
-        )
-
-        # Clean up the response (remove quotes if present)
-        search_terms = search_terms.strip('"').strip("'")
+        # Step 5: Extract and clean search terms
+        search_terms = _extract_search_terms(response)
 
         return search_terms, None
 
@@ -141,6 +76,141 @@ def analyze_image_for_products(image_path=None, image_bytes=None):
         error_msg = f"Error analyzing image: {str(e)}"
         print(error_msg)
         return None, error_msg
+
+
+def _init_azure_client():
+    """
+    Initialize Azure OpenAI client with environment configuration.
+
+    Returns:
+        AzureOpenAI client or (None, error_message) tuple
+    """
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    api_key = os.getenv("AZURE_OPENAI_API_KEY")
+    api_version = os.getenv(
+        "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
+    )
+    deployment_name = os.getenv(
+        "AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o"
+    )
+
+    if not azure_endpoint:
+        err_msg = "AZURE_OPENAI_ENDPOINT not found in env vars"
+        return None, err_msg + ". Please add it to .env file"
+
+    if not api_key:
+        err_msg = "AZURE_OPENAI_API_KEY not found in env vars"
+        return None, err_msg + ". Please add it to .env file"
+
+    client = AzureOpenAI(
+        api_key=api_key,
+        api_version=api_version,
+        azure_endpoint=azure_endpoint,
+    )
+
+    return client
+
+
+def _encode_image(image_path=None, image_bytes=None):
+    """
+    Encode image to base64 from file path or bytes.
+
+    Args:
+        image_path: Path to image file (optional)
+        image_bytes: Image bytes (optional)
+
+    Returns:
+        Base64 string or (None, error_message) tuple
+    """
+    if image_path:
+        return encode_image_to_base64(image_path)
+    elif image_bytes:
+        return encode_image_bytes_to_base64(image_bytes)
+    else:
+        return None, "No image provided"
+
+
+def _get_analysis_prompt():
+    """Get the GPT-4 Vision analysis prompt."""
+    prompt = (
+        "Analyze this image and identify products, items, or "
+        "objects someone might want to purchase.\n"
+        "\nYour task:\n"
+        "1. Identify main product(s) or item(s)\n"
+        "2. Note key characteristics (brand, color, etc)\n"
+        "3. Extract relevant search terms for this product\n"
+        "\nProvide a concise search query (2-6 words).\n"
+        "Only return search terms. Make it specific for e-comm.\n"
+        "\nExamples:\n"
+        "- Red Nike shoe: 'red Nike running shoes'\n"
+        "- Laptop: 'silver laptop computer'\n"
+        "- Coffee maker: 'stainless steel coffee maker'\n"
+        "\nReturn only the search query, no explanation."
+    )
+    return prompt
+
+
+def _call_gpt4_api(client, prompt, base64_image):
+    """
+    Call Azure OpenAI GPT-4 Vision API with image and prompt.
+
+    Args:
+        client: AzureOpenAI client
+        prompt: Analysis prompt text
+        base64_image: Base64 encoded image
+
+    Returns:
+        API response
+    """
+    deployment_name = os.getenv(
+        "AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o"
+    )
+
+    response = client.chat.completions.create(
+        model=deployment_name,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": (
+                                "data:image/jpeg;base64,"
+                                f"{base64_image}"
+                            )
+                        }
+                    }
+                ]
+            }
+        ],
+        max_tokens=GPT4_MAX_TOKENS,
+        temperature=GPT4_TEMPERATURE
+    )
+
+    return response
+
+
+def _extract_search_terms(response):
+    """
+    Extract and clean search terms from API response.
+
+    Args:
+        response: API response object
+
+    Returns:
+        Cleaned search terms string
+    """
+    search_terms = (
+        response.choices[PHARAMS_FIRST].message.content.strip()
+    )
+    # Remove surrounding quotes if present
+    search_terms = search_terms.strip('"').strip("'")
+    return search_terms
 
 
 def test_image_analysis():

@@ -17,13 +17,22 @@ class CreateUserDialog(wx.Dialog):
             parent,
             title="Create New User",
             size=(
-                450,
-                320))
+                800,
+                800))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.AddSpacer(15)
 
-        # Username section
+        # Build UI
+        self._create_username_section(main_sizer)
+        self._create_password_section(main_sizer)
+        self._create_confirm_password_section(main_sizer)
+        self._create_buttons_section(main_sizer)
+
+        self.SetSizer(main_sizer)
+
+    def _create_username_section(self, main_sizer):
+        """Create username input section"""
         username_label = wx.StaticText(self, label="Username:")
         username_font = wx.Font(
             11,
@@ -38,9 +47,15 @@ class CreateUserDialog(wx.Dialog):
         main_sizer.Add(self.username_entry, 0, wx.LEFT | wx.RIGHT, 20)
         main_sizer.AddSpacer(15)
 
-        # Password section
+    def _create_password_section(self, main_sizer):
+        """Create password input section"""
         password_label = wx.StaticText(self, label="Password:")
-        password_label.SetFont(username_font)
+        password_font = wx.Font(
+            11,
+            wx.FONTFAMILY_DEFAULT,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_BOLD)
+        password_label.SetFont(password_font)
         main_sizer.Add(password_label, 0, wx.LEFT | wx.RIGHT, 20)
         main_sizer.AddSpacer(5)
 
@@ -49,9 +64,15 @@ class CreateUserDialog(wx.Dialog):
         main_sizer.Add(self.password_entry, 0, wx.LEFT | wx.RIGHT, 20)
         main_sizer.AddSpacer(15)
 
-        # Confirm password section
+    def _create_confirm_password_section(self, main_sizer):
+        """Create confirm password input section"""
         confirm_label = wx.StaticText(self, label="Confirm Password:")
-        confirm_label.SetFont(username_font)
+        confirm_font = wx.Font(
+            11,
+            wx.FONTFAMILY_DEFAULT,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_BOLD)
+        confirm_label.SetFont(confirm_font)
         main_sizer.Add(confirm_label, 0, wx.LEFT | wx.RIGHT, 20)
         main_sizer.AddSpacer(5)
 
@@ -60,7 +81,8 @@ class CreateUserDialog(wx.Dialog):
         main_sizer.Add(self.confirm_entry, 0, wx.LEFT | wx.RIGHT, 20)
         main_sizer.AddSpacer(20)
 
-        # Buttons
+    def _create_buttons_section(self, main_sizer):
+        """Create action buttons section"""
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         button_sizer.AddStretchSpacer(1)
 
@@ -77,7 +99,29 @@ class CreateUserDialog(wx.Dialog):
         button_sizer.AddStretchSpacer(1)
         main_sizer.Add(button_sizer, 0, wx.EXPAND)
 
-        self.SetSizer(main_sizer)
+    def _validate_inputs(self, username, password, confirm_password):
+        """Validate user inputs. Returns (is_valid, error_message)"""
+        if not username or not password:
+            return False, "Please enter username and password"
+        
+        if password != confirm_password:
+            return False, "Passwords do not match"
+        
+        return True, ""
+
+    def _create_user_on_server(self, username, password):
+        """Create user on server. Returns (success, error_message)"""
+        try:
+            client = ShoppingClient(IP, PORT)
+            success = client.create_user(username, password)
+            client.close()
+            
+            if success:
+                return True, f"User '{username}' created successfully!"
+            else:
+                return False, "Failed to create user. Username may already exist."
+        except Exception as e:
+            return False, f"Error creating user:\n{str(e)}"
 
     def on_create(self, event):
         """Handle create user button click"""
@@ -85,38 +129,21 @@ class CreateUserDialog(wx.Dialog):
         new_password = self.password_entry.GetValue().strip()
         confirm_password = self.confirm_entry.GetValue().strip()
 
-        if not new_username or not new_password:
-            wx.MessageBox(
-                "Please enter username and password",
-                "Error",
-                wx.OK | wx.ICON_ERROR)
+        # Validate inputs
+        is_valid, error_msg = self._validate_inputs(
+            new_username, new_password, confirm_password)
+        
+        if not is_valid:
+            wx.MessageBox(error_msg, "Error", wx.OK | wx.ICON_ERROR)
             return
 
-        if new_password != confirm_password:
-            wx.MessageBox(
-                "Passwords do not match",
-                "Error",
-                wx.OK | wx.ICON_ERROR)
-            return
+        # Create user on server
+        success, message = self._create_user_on_server(
+            new_username, new_password)
+        
+        if success:
+            wx.MessageBox(message, "Success", wx.OK | wx.ICON_INFORMATION)
+            self.EndModal(wx.ID_OK)
+        else:
+            wx.MessageBox(message, "Error", wx.OK | wx.ICON_ERROR)
 
-        try:
-            client = ShoppingClient(IP, PORT)
-            success = client.create_user(new_username, new_password)
-            client.close()
-
-            if success:
-                wx.MessageBox(
-                    f"User '{new_username}' created successfully!",
-                    "Success",
-                    wx.OK | wx.ICON_INFORMATION)
-                self.EndModal(wx.ID_OK)
-            else:
-                wx.MessageBox(
-                    "Failed to create user. Username may already exist.",
-                    "Error",
-                    wx.OK | wx.ICON_ERROR)
-        except Exception as e:
-            wx.MessageBox(
-                f"Error creating user:\n{str(e)}",
-                "Connection Error",
-                wx.OK | wx.ICON_ERROR)

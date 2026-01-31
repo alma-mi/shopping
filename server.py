@@ -9,14 +9,15 @@ import json
 import methods
 from db import create_tables
 import protocol
-from constants import IP, PORT
+from constants import IP, PORT, MAX_LISTEN_BACKLOG, ONE, ZERO
+import key_exchange
 
-NUM_OF_LISTEN = 5
+NUM_OF_LISTEN = MAX_LISTEN_BACKLOG
 REQUEST_PLACE = 0
 EXIT_CODE = 1
 PHARAMS_FIRST = 0
 PHARAMS_SECOND = 1
-MAX = 1
+MAX = ONE
 
 
 class ShoppingServer(object):
@@ -43,13 +44,13 @@ class ShoppingServer(object):
         try:
             print("Waiting for clients...")
             while True:
-                client_socket, address = self.server_socket.accept()
+                conn, address = self.server_socket.accept()
                 print(f"Client connected from {address}")
 
                 # Handle each client in a separate thread
                 client_thread = threading.Thread(
                     target=self.handle_single_client,
-                    args=(client_socket, address)
+                    args=(conn, address)
                 )
                 client_thread.daemon = True
                 client_thread.start()
@@ -64,12 +65,14 @@ class ShoppingServer(object):
 
     def handle_single_client(self, client_socket, address):
         """Handle a single client connection"""
+        key = key_exchange.KeyExchange.recv_send_key((client_socket, None))
+        conn = (client_socket, key)
         try:
             request = None
             while request != 'EXIT':
                 # Receive and parse request
                 request, params = self.receive_client_request(
-                    client_socket, address)
+                    conn, address)
 
                 if not request:
                     break
@@ -81,10 +84,10 @@ class ShoppingServer(object):
 
                 # Handle request and get response
                 response = self.handle_client_request(
-                    request, params, client_socket, address)
+                    request, params, conn, address)
 
                 # Send response
-                self.send_response_to_client(response, client_socket)
+                self.send_response_to_client(response, conn)
 
                 if request == 'EXIT':
                     break
@@ -98,18 +101,18 @@ class ShoppingServer(object):
             client_socket.close()
 
     @staticmethod
-    def receive_client_request(client_socket, address):
+    def receive_client_request(conn, address):
         """
         Receive request from client and parse command/parameters
         Returns: (command, params_list)
         """
         try:
-            request = protocol.Protocol.recv(client_socket)
+            request = protocol.Protocol.recv(conn)
 
             if not request:
                 return None, None
 
-            request_str = request.decode().strip()
+            request_str = request.strip()
 
             if not request_str:
                 return None, None
@@ -130,7 +133,7 @@ class ShoppingServer(object):
             return None, None
 
     @staticmethod
-    def handle_client_request(request, params, client_socket, address):
+    def handle_client_request(request, params, conn, address):
         """
         Route request to appropriate method
         Returns: response string (JSON)
@@ -139,7 +142,7 @@ class ShoppingServer(object):
             # Get the method from Methods class
             if hasattr(methods.Methods, request):
                 method = getattr(methods.Methods, request)
-                return method(client_socket, params, address)
+                return method(conn, params, address)
             else:
                 return json.dumps({
                     "status": "error",
@@ -153,10 +156,10 @@ class ShoppingServer(object):
             })
 
     @staticmethod
-    def send_response_to_client(response, client_socket):
+    def send_response_to_client(response, conn):
         """Send response to client"""
         try:
-            protocol.Protocol.send(client_socket, response)
+            protocol.Protocol.send(conn, response)
         except socket.error as msg:
             print(f"Socket error sending response: {msg}")
         except Exception as msg:

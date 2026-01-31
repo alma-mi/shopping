@@ -2,10 +2,10 @@ import sqlite3
 import os
 from datetime import datetime
 from passlib.hash import bcrypt
+from constants import MIN_INDEX, MAX_INDEX
 
-
-MIN = 0
-MAX = 1
+MIN = MIN_INDEX
+MAX = MAX_INDEX
 # Database path (uses existing databaselog.db in project root by default)
 BASE_DIR = os.path.dirname(__file__)
 DB_PATH = os.path.join(BASE_DIR, "databaselog.db")
@@ -79,8 +79,8 @@ def get_user(username: str):
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT username, password FROM users WHERE "
-            "username = ?", (username,))
+            "SELECT username, password FROM users WHERE username = ?",
+            (username,))
         row = cur.fetchone()
         if row:
             return {"username": row[MIN], "password": row[MAX]}
@@ -90,14 +90,14 @@ def get_user(username: str):
 
 
 def change_password(username: str, new_password: str) -> bool:
-    """Change user password. Returns True if updated."""
+    """Change a user's password (hashes new password).
+    Returns True if updated."""
     conn = get_conn()
     try:
         cur = conn.cursor()
         cur.execute(
             "UPDATE users SET password = ? WHERE username = ?",
-            (new_password,
-             username))
+            (new_password, username))
         conn.commit()
         return cur.rowcount > MIN
     finally:

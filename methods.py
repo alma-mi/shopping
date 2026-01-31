@@ -4,7 +4,8 @@ Handles authentication, product search, and session management
 """
 import uuid
 import time
-from constants import SESSIONS, MAX_IMAGE_SIZE
+from constants import (SESSIONS, MAX_IMAGE_SIZE, PARAMS_FIRST, PARAMS_SECOND,
+                       ONE, ZERO, IMAGE_CHUNK_SIZE, BYTE_CONVERSION)
 from google_search import google_search_for_product
 from chatgpt_search import analyze_image_for_products
 import json
@@ -14,14 +15,14 @@ from db import verify_user, get_user, add_user
 MAX_PARAMS = 2
 MIN_PARAMS = 0
 PARAMS_ONE = 1
-IMAGE_CHUNK_SIZE = 4096
-BYTE = 1024
+IMAGE_CHUNK_SIZE_VAR = IMAGE_CHUNK_SIZE
+BYTE = BYTE_CONVERSION
 
 
 class Methods(object):
 
     @staticmethod
-    def LOGIN(my_socket, params, address):
+    def LOGIN(conn, params, address):
         """
         Authenticate user with username and password
         params: [username, password]
@@ -61,7 +62,7 @@ class Methods(object):
         })
 
     @staticmethod
-    def CREATE_USER(my_socket, params, address):
+    def CREATE_USER(conn, params, address):
         """
         Create a new user account
         params: [username, password]
@@ -74,109 +75,74 @@ class Methods(object):
         username = params[MIN_PARAMS]
         password = params[PARAMS_ONE]
 
-        # Validate inputs
-        if not username or not password:
-            msg = "Username and password cannot be empty"
-            return json.dumps(
-                {"status": "error", "message": msg})
-
         # Check if user already exists
         existing_user = get_user(username)
         if existing_user is not None:
-            return json.dumps(
-                {"status": "error", "message": "Username already exists"})
+            return json.dumps({"status": "error",
+                               "message": "Username already taken"})
 
-        # Add user to database
-        success = add_user(username, password)
-
-        if success:
-            return json.dumps({
-                "status": "success",
-                "message": f"User '{username}' created successfully"
-            })
-        else:
-            return json.dumps({
-                "status": "error",
-                "message": "Failed to create user"
-            })
+        # Create new user
+        add_user(username, password)
+        return json.dumps({"status": "success",
+                           "message": "User created successfully"})
 
     @staticmethod
-    def SEARCH_PRODUCT(my_socket, params, address):
+    def SEARCH_PRODUCT(conn, params, address):
         """
-        Search for products using Google Shopping API
-        params: [session_id, product_query]
+        Search for products using text query
+        params: [session_id, product_query...]
         Returns: JSON with product list or error
         """
         if not params or len(params) < MAX_PARAMS:
-            msg = "Session ID and product query required"
-            return json.dumps(
-                {"status": "error", "message": msg})
+            return json.dumps({"status": "error",
+                               "message": "Session ID and product query required"})
 
         session_id = params[MIN_PARAMS]
-        # Join remaining params as query
-        product_query = ' '.join(params[PARAMS_ONE:])
 
         # Validate session
         if session_id not in SESSIONS:
-            err_msg = "Invalid session. Please login again."
-            return json.dumps(
-                {"status": "error", "message": err_msg})
+            return json.dumps({"status": "error",
+                               "message": "Invalid session. Please login again."})
+
+        # Join remaining params as query
+        product_query = ' '.join(params[PARAMS_ONE:])
 
         # Search for products
-        products, error_message = google_search_for_product(product_query)
+        products, error = google_search_for_product(product_query)
 
-        if error_message:
-            return json.dumps({
-                "status": "error",
-                "message": error_message
-            })
+        if error:
+            return json.dumps({"status": "error", "message": error})
 
-        if not products:
-            return json.dumps({
-                "status": "success",
-                "products": [],
-                "message": f"No products found for '{product_query}'"
-            })
-
-        return json.dumps({
-            "status": "success",
-            "products": products,
-            "query": product_query,
-            "count": len(products)
-        })
+        return json.dumps({"status": "success",
+                           "products": products,
+                           "query": product_query,
+                           "count": len(products)})
 
     @staticmethod
-    def LOGOUT(my_socket, params, address):
+    def LOGOUT(conn, params, address):
         """
         Logout user and destroy session
         params: [session_id]
         Returns: JSON with success message
         """
         if not params or len(params) < PARAMS_ONE:
-            return json.dumps(
-                {"status": "error", "message": "Session ID required"})
+            return json.dumps({"status": "error",
+                               "message": "Session ID required"})
 
         session_id = params[MIN_PARAMS]
 
+        # Remove session
         if session_id in SESSIONS:
-            username = SESSIONS[session_id]["username"]
             del SESSIONS[session_id]
-            return json.dumps({
-                "status": "success",
-                "message": f"Goodbye, {username}!"
-            })
+            return json.dumps({"status": "success",
+                               "message": "Logged out successfully"})
         else:
-            return json.dumps({
-                "status": "error",
-                "message": "Invalid session"
-            })
+            return json.dumps({"status": "error",
+                               "message": "Invalid session"})
 
     @staticmethod
-    def GET_SESSIONS(my_socket, params, address):
-        """
-        Get active sessions (for debugging)
-        Returns: JSON with session count
-        """
+    def GET_SESSIONS(conn, params, address):
+        """Get active sessions (for debugging)"""
         return json.dumps({
             "status": "success",
             "active_sessions": len(SESSIONS),
@@ -184,48 +150,45 @@ class Methods(object):
         })
 
     @staticmethod
-    def IMAGE_SEARCH(my_socket, params, address):
+    def IMAGE_SEARCH(conn, params, address):
         """
         Search for products using an uploaded image
         1. Receives image data from client
-        2. Uses GPT-4 Vision to analyze image and extract search terms
+        2. Uses ChatGPT to analyze and extract search terms
         3. Searches for products using extracted terms
         """
         if not params or len(params) < PARAMS_ONE:
-            return json.dumps(
-                {"status": "error", "message": "Session ID required"})
+            return json.dumps({"status": "error",
+                               "message": "Session ID required"})
 
         session_id = params[MIN_PARAMS]
 
         # Validate session
         if session_id not in SESSIONS:
-            err_msg = "Invalid session. Please login again."
-            return json.dumps(
-                {"status": "error", "message": err_msg})
+            return json.dumps({"status": "error",
+                               "message": "Invalid session. Please login again."})
 
         try:
             # Receive image size
-            size_data = protocol.Protocol.recv(my_socket)
+            size_data = protocol.Protocol.recv(conn)
             if not size_data:
                 return json.dumps({"status": "error",
                                    "message": "Failed to receive image size"})
 
-            image_size = int(size_data.decode())
+            image_size = int(size_data)
 
             # Check image size limit
             if image_size > MAX_IMAGE_SIZE:
                 size_mb = MAX_IMAGE_SIZE / (BYTE * BYTE)
                 msg = f"Image too large. Max size is {size_mb}MB"
-                return json.dumps({
-                    "status": "error",
-                    "message": msg
-                })
+                return json.dumps({"status": "error", "message": msg})
 
             # Receive image data
             image_data = b""
             while len(image_data) < image_size:
-                chunk = my_socket.recv(
-                    min(IMAGE_CHUNK_SIZE, image_size - len(image_data)))
+                chunk = conn[protocol.SOCK].recv(
+                    min(IMAGE_CHUNK_SIZE_VAR,
+                        image_size - len(image_data)))
                 if not chunk:
                     break
                 image_data += chunk
@@ -234,55 +197,23 @@ class Methods(object):
                 exp = image_size
                 got = len(image_data)
                 msg = f"Incomplete image data. Expected {exp}, got {got}"
-                return json.dumps({
-                    "status": "error",
-                    "message": msg
-                })
+                return json.dumps({"status": "error", "message": msg})
 
+            # Analyze image with ChatGPT
             search_terms, error = analyze_image_for_products(
-                image_bytes=image_data)
-
+                None, image_data)
             if error:
-                return json.dumps({
-                    "status": "error",
-                    "message": f"Image analysis failed: {error}"
-                })
-
-            if not search_terms:
-                return json.dumps({
-                    "status": "error",
-                    "message": "Could not extract search terms from image"
-                })
+                return json.dumps({"status": "error", "message": error})
 
             # Search for products using extracted terms
-            products, search_error = google_search_for_product(search_terms)
+            products, error = google_search_for_product(search_terms)
+            if error:
+                return json.dumps({"status": "error", "message": error})
 
-            if search_error:
-                return json.dumps({
-                    "status": "error",
-                    "message": search_error,
-                    "search_terms": search_terms
-                })
-
-            if not products:
-                return json.dumps({
-                    "status": "success",
-                    "products": [],
-                    "search_terms": search_terms,
-                    "message": f"No products found for '{search_terms}'"
-                })
-
-            return json.dumps({
-                "status": "success",
-                "products": products,
-                "search_terms": search_terms,
-                "query": search_terms,
-                "count": len(products),
-                "message": (
-                    f"Found {len(products)} products for "
-                    f"'{search_terms}'"
-                )
-            })
+            return json.dumps({"status": "success",
+                               "products": products,
+                               "search_terms": search_terms,
+                               "count": len(products)})
 
         except Exception as e:
             return json.dumps({
@@ -291,6 +222,6 @@ class Methods(object):
             })
 
     @staticmethod
-    def EXIT(my_socket, params, address):
+    def EXIT(conn, params, address):
         """Close client connection"""
         return json.dumps({"status": "success", "message": "EXIT"})
