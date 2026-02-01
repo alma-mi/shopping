@@ -20,7 +20,8 @@ class Protocol(object):
         """Send string data over socket with length prefix"""
         encoded_msg = data.encode()
         if conn[KEY] is not None:
-            encoded_msg = aes_cipher.AESCipher.encrypt(conn[KEY],encoded_msg)
+            encoded_msg = aes_cipher.AESCipher.encrypt(
+                conn[KEY], encoded_msg)
         length = len(encoded_msg)
         length_str = str(length).zfill(MAX)
         length_bytes = length_str.encode()

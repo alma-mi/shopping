@@ -21,7 +21,8 @@ class LoginGUI:
         self.main_frame.main_sizer.Clear(True)
 
         # Set white background like a normal website
-        self.main_frame.main_panel.SetBackgroundColour(wx.Colour(255, 255, 255))
+        self.main_frame.main_panel.SetBackgroundColour(
+            wx.Colour(255, 255, 255))
 
         # Create vertical sizer
         login_sizer = wx.BoxSizer(wx.VERTICAL)

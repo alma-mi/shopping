@@ -77,7 +77,8 @@ class SearchGUI:
             5)
 
         # Search button (disabled until image is selected)
-        self.search_btn = wx.Button(parent, label="Search by Image", size=(100, 30))
+        self.search_btn = wx.Button(
+            parent, label="Search by Image", size=(100, 30))
         self.search_btn.SetBackgroundColour(wx.Colour(0, 102, 204))
         self.search_btn.SetForegroundColour(wx.Colour(255, 255, 255))
         self.search_btn.SetFont(create_styled_font(12, wx.FONTWEIGHT_BOLD))

@@ -3,6 +3,7 @@
 
 import hashlib
 
+
 class Hasha256:
     @staticmethod
     def get_hash(st):
@@ -10,10 +11,12 @@ class Hasha256:
         result = hashlib.sha256(st.encode())
         return result.digest()
 
+    @staticmethod
     def get_hash_hex(st):
         """ printing the equivalent hexadecimal value. """
         result = hashlib.sha256(st.encode())
         return result.hexdigest()
+
 
 def main():
     """ hashing tests """
@@ -21,6 +24,7 @@ def main():
     st = "hello my name is inigo montoya"
     print(Hasha256.get_hash(st))
     print(Hasha256.get_hash_hex(st))
+
 
 if __name__ == "__main__":
     main()

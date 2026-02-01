@@ -145,7 +145,9 @@ class ShoppingGUI(wx.Frame):
         logout_btn = wx.Button(top_panel, label="Logout", size=(100, 30))
         logout_btn.SetBackgroundColour(wx.Colour(128, 128, 128))
         logout_btn.SetForegroundColour(wx.Colour(255, 255, 255))
-        logout_btn.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        logout_btn.SetFont(
+            wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_BOLD))
         logout_btn.Bind(wx.EVT_BUTTON, self.on_logout)
         top_sizer.Add(logout_btn, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 15)
 

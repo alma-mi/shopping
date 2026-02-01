@@ -21,9 +21,11 @@ class ShoppingClient(object):
     def __init__(self, ip, port):
         """Initialize client socket and connect to server"""
         try:
-            self.my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.my_socket = socket.socket(
+                socket.AF_INET, socket.SOCK_STREAM)
             self.my_socket.connect((IP, PORT))
-            key = key_exchange.KeyExchange.send_recv_key((self.my_socket, None))
+            key = key_exchange.KeyExchange.send_recv_key(
+                (self.my_socket, None))
             self.conn = (self.my_socket, key)
             self.session_id = None
             self.username = None

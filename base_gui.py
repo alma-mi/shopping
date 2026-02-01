@@ -18,7 +18,7 @@ class GUIConstants:
     GRAY_COLOR = wx.Colour(128, 128, 128)
     LIGHT_GRAY = wx.Colour(200, 200, 200)
     WHITE = wx.Colour(255, 255, 255)
-    
+
     # New gradient and theme colors
     BG_DARK = wx.Colour(15, 23, 42)  # Dark navy background
     BG_LIGHT = wx.Colour(241, 245, 250)  # Light background

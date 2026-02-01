@@ -94,15 +94,15 @@ class Methods(object):
         Returns: JSON with product list or error
         """
         if not params or len(params) < MAX_PARAMS:
-            return json.dumps({"status": "error",
-                               "message": "Session ID and product query required"})
+            msg = "Session ID and product query required"
+            return json.dumps({"status": "error", "message": msg})
 
         session_id = params[MIN_PARAMS]
 
         # Validate session
         if session_id not in SESSIONS:
-            return json.dumps({"status": "error",
-                               "message": "Invalid session. Please login again."})
+            msg = "Invalid session. Please login again."
+            return json.dumps({"status": "error", "message": msg})
 
         # Join remaining params as query
         product_query = ' '.join(params[PARAMS_ONE:])
@@ -165,8 +165,8 @@ class Methods(object):
 
         # Validate session
         if session_id not in SESSIONS:
-            return json.dumps({"status": "error",
-                               "message": "Invalid session. Please login again."})
+            msg = "Invalid session. Please login again."
+            return json.dumps({"status": "error", "message": msg})
 
         try:
             # Receive image size

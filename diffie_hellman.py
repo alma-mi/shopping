@@ -4,8 +4,8 @@ from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, \
-    load_pem_public_key
+from cryptography.hazmat.primitives.serialization import (
+    Encoding, PublicFormat, load_pem_public_key)
 from cryptography.hazmat.backends import default_backend
 
 
@@ -26,10 +26,12 @@ class DiffieHellman:
 
     def get_key(self, public_key):
         """ return generated shared key, hashed """
-        shared_key = self.diffieHellman.exchange(ec.ECDH(), public_key)
+        shared_key = self.diffieHellman.exchange(
+            ec.ECDH(), public_key)
 
-        derived_key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None,
-                            info=None).derive(shared_key)
+        derived_key = HKDF(
+            algorithm=hashes.SHA256(), length=32, salt=None,
+            info=None).derive(shared_key)
         return derived_key
 
 

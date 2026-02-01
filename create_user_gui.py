@@ -103,10 +103,10 @@ class CreateUserDialog(wx.Dialog):
         """Validate user inputs. Returns (is_valid, error_message)"""
         if not username or not password:
             return False, "Please enter username and password"
-        
+
         if password != confirm_password:
             return False, "Passwords do not match"
-        
+
         return True, ""
 
     def _create_user_on_server(self, username, password):
@@ -115,11 +115,13 @@ class CreateUserDialog(wx.Dialog):
             client = ShoppingClient(IP, PORT)
             success = client.create_user(username, password)
             client.close()
-            
+
             if success:
-                return True, f"User '{username}' created successfully!"
+                msg = f"User '{username}' created successfully!"
+                return True, msg
             else:
-                return False, "Failed to create user. Username may already exist."
+                msg = "Failed to create user. Username may already exist."
+                return False, msg
         except Exception as e:
             return False, f"Error creating user:\n{str(e)}"
 
@@ -132,7 +134,7 @@ class CreateUserDialog(wx.Dialog):
         # Validate inputs
         is_valid, error_msg = self._validate_inputs(
             new_username, new_password, confirm_password)
-        
+
         if not is_valid:
             wx.MessageBox(error_msg, "Error", wx.OK | wx.ICON_ERROR)
             return
@@ -140,10 +142,10 @@ class CreateUserDialog(wx.Dialog):
         # Create user on server
         success, message = self._create_user_on_server(
             new_username, new_password)
-        
+
         if success:
-            wx.MessageBox(message, "Success", wx.OK | wx.ICON_INFORMATION)
+            wx.MessageBox(message, "Success",
+                          wx.OK | wx.ICON_INFORMATION)
             self.EndModal(wx.ID_OK)
         else:
             wx.MessageBox(message, "Error", wx.OK | wx.ICON_ERROR)
-
