@@ -176,7 +176,7 @@ class ResultsGUI:
         rating = product.get('rating', 0)
         reviews = product.get('reviews', 0)
         if rating:
-            stars = "*" * int(rating)
+            stars = "★" * int(rating)
             rating_label = wx.StaticText(
                 card, label=f"{stars} ({reviews} reviews)")
             card_sizer.Add(rating_label, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)

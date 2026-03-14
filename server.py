@@ -9,13 +9,13 @@ import json
 import methods
 from db import create_tables
 import protocol
-from constants import IP, PORT, MAX_LISTEN_BACKLOG, ONE, ZERO
+from constants import PORT, MAX_LISTEN_BACKLOG, ONE, ZERO
 import key_exchange
 
+IP = "0.0.0.0"
 NUM_OF_LISTEN = MAX_LISTEN_BACKLOG
 REQUEST_PLACE = 0
-EXIT_CODE = 1
-PHARAMS_FIRST = 0
+EXIT_CODE = PHARAMS_FIRST = 0
 PHARAMS_SECOND = 1
 MAX = ONE
 
