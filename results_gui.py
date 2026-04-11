@@ -5,7 +5,7 @@ Handles display of search results and product cards
 import wx
 import wx.lib.scrolledpanel as scrolled
 import webbrowser
-from base_gui import GUIConstants, create_styled_font
+from base_gui import GUIConstants, GUIUtils
 
 
 class ResultsGUI:
@@ -21,7 +21,7 @@ class ResultsGUI:
         # Results label
         results_label = wx.StaticText(
             self.main_frame.main_panel, label="Results:")
-        results_label_font = create_styled_font(12, wx.FONTWEIGHT_BOLD)
+        results_label_font = GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD)
         results_label.SetFont(results_label_font)
         results_label.SetForegroundColour(wx.Colour(0, 0, 0))
         self.main_frame.main_sizer.Add(results_label, 0,
@@ -44,7 +44,7 @@ class ResultsGUI:
         msg = wx.StaticText(
             self.results_panel,
             label="Select an image to search for similar products...")
-        msg_font = create_styled_font(11)
+        msg_font = GUIUtils.create_styled_font(11)
         msg.SetFont(msg_font)
         msg.SetForegroundColour(wx.Colour(128, 128, 128))
         self.results_sizer.Add(msg, 0, wx.ALIGN_CENTER | wx.ALL, 30)
@@ -57,7 +57,7 @@ class ResultsGUI:
         self.results_sizer.Clear(True)
 
         loading = wx.StaticText(self.results_panel, label=message)
-        loading_font = create_styled_font(GUIConstants.HEADING_SIZE)
+        loading_font = GUIUtils.create_styled_font(GUIConstants.HEADING_SIZE)
         loading.SetFont(loading_font)
         self.results_sizer.Add(loading, 0, wx.ALIGN_CENTER | wx.ALL, 20)
         self.results_panel.Layout()
@@ -71,7 +71,7 @@ class ResultsGUI:
             error_msg = wx.StaticText(
                 self.results_panel,
                 label=f"Error: {search_terms}")
-            error_font = create_styled_font(GUIConstants.HEADING_SIZE)
+            error_font = GUIUtils.create_styled_font(GUIConstants.HEADING_SIZE)
             error_msg.SetFont(error_font)
             error_msg.SetForegroundColour(GUIConstants.ERROR_COLOR)
             self.results_sizer.Add(error_msg, 0, wx.ALIGN_CENTER | wx.ALL, 50)
@@ -83,7 +83,7 @@ class ResultsGUI:
         terms_label = wx.StaticText(
             self.results_panel,
             label=f"AI detected: {search_terms}")
-        terms_font = create_styled_font(
+        terms_font = GUIUtils.create_styled_font(
             GUIConstants.NORMAL_SIZE,
             wx.FONTWEIGHT_BOLD,
             wx.FONTSTYLE_ITALIC)
@@ -99,7 +99,7 @@ class ResultsGUI:
             no_results = wx.StaticText(
                 self.results_panel,
                 label=f"No products found for '{search_terms}'")
-            no_results_font = create_styled_font(GUIConstants.HEADING_SIZE)
+            no_results_font = GUIUtils.create_styled_font(GUIConstants.HEADING_SIZE)
             no_results.SetFont(no_results_font)
             no_results.SetForegroundColour(GUIConstants.GRAY_COLOR)
             self.results_sizer.Add(no_results, 0, wx.ALIGN_CENTER | wx.ALL, 50)
@@ -122,7 +122,7 @@ class ResultsGUI:
             no_results = wx.StaticText(
                 self.results_panel,
                 label=f"No products found for '{query}'")
-            no_results_font = create_styled_font(GUIConstants.HEADING_SIZE)
+            no_results_font = GUIUtils.create_styled_font(GUIConstants.HEADING_SIZE)
             no_results.SetFont(no_results_font)
             no_results.SetForegroundColour(GUIConstants.GRAY_COLOR)
             self.results_sizer.Add(no_results, 0, wx.ALIGN_CENTER | wx.ALL, 50)
@@ -146,7 +146,7 @@ class ResultsGUI:
 
         # Product name (clickable)
         name_label = wx.StaticText(card, label=product['name'])
-        name_font = create_styled_font(
+        name_font = GUIUtils.create_styled_font(
             GUIConstants.NORMAL_SIZE,
             wx.FONTWEIGHT_BOLD)
         name_label.SetFont(name_font)
@@ -167,7 +167,7 @@ class ResultsGUI:
         # Source
         source_label = wx.StaticText(
             card, label=f"Source: {product['source']}")
-        source_font = create_styled_font(GUIConstants.SMALL_SIZE)
+        source_font = GUIUtils.create_styled_font(GUIConstants.SMALL_SIZE)
         source_label.SetFont(source_font)
         source_label.SetForegroundColour(GUIConstants.GRAY_COLOR)
         card_sizer.Add(source_label, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)

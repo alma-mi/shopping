@@ -3,7 +3,7 @@ Login GUI module
 Handles user authentication and new user creation
 """
 import wx
-from base_gui import GUIConstants, create_styled_button, create_styled_font
+from base_gui import GUIConstants, GUIUtils
 from create_user_gui import CreateUserDialog
 
 
@@ -30,7 +30,7 @@ class LoginGUI:
 
         # Title - simple black text
         title = wx.StaticText(self.main_frame.main_panel, label="Shopping App")
-        title_font = create_styled_font(24, wx.FONTWEIGHT_BOLD)
+        title_font = GUIUtils.create_styled_font(24, wx.FONTWEIGHT_BOLD)
         title.SetFont(title_font)
         title.SetForegroundColour(wx.Colour(0, 0, 0))
         login_sizer.Add(title, 0, wx.ALIGN_CENTER | wx.ALL, 20)
@@ -42,7 +42,7 @@ class LoginGUI:
         self.username_entry.SetValue("")
         self.username_entry.SetBackgroundColour(wx.Colour(255, 255, 255))
         self.username_entry.SetForegroundColour(wx.Colour(0, 0, 0))
-        entry_font = create_styled_font(16, wx.FONTWEIGHT_NORMAL)
+        entry_font = GUIUtils.create_styled_font(16, wx.FONTWEIGHT_NORMAL)
         self.username_entry.SetFont(entry_font)
         self.username_entry.SetWindowStyle(wx.TE_PROCESS_ENTER)
         login_sizer.Add(self.username_entry, 0, wx.ALIGN_CENTER | wx.ALL, 8)
@@ -65,7 +65,7 @@ class LoginGUI:
         login_btn.SetMinSize((300, 35))
         login_btn.SetBackgroundColour(wx.Colour(0, 102, 204))
         login_btn.SetForegroundColour(wx.Colour(255, 255, 255))
-        button_font = create_styled_font(16, wx.FONTWEIGHT_BOLD)
+        button_font = GUIUtils.create_styled_font(16, wx.FONTWEIGHT_BOLD)
         login_btn.SetFont(button_font)
         login_btn.Bind(wx.EVT_BUTTON, self.main_frame.on_login)
         login_sizer.Add(login_btn, 0, wx.ALIGN_CENTER | wx.ALL, 10)

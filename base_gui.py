@@ -38,32 +38,36 @@ class GUIConstants:
     PREVIEW_SIZE = (200, 200)
 
 
-def create_styled_button(parent, label, color,
-                         text_color=GUIConstants.WHITE):
-    """Create a button with custom styling"""
-    btn = wx.Button(parent, label=label)
-    btn.SetBackgroundColour(color)
-    btn.SetForegroundColour(text_color)
-    return btn
+class GUIUtils:
+    """Utility methods for creating and styling GUI components"""
 
+    @staticmethod
+    def create_styled_button(parent, label, color,
+                             text_color=GUIConstants.WHITE):
+        """Create a button with custom styling"""
+        btn = wx.Button(parent, label=label)
+        btn.SetBackgroundColour(color)
+        btn.SetForegroundColour(text_color)
+        return btn
 
-def create_styled_font(size=GUIConstants.NORMAL_SIZE,
-                       weight=wx.FONTWEIGHT_NORMAL,
-                       style=wx.FONTSTYLE_NORMAL):
-    """Create a styled font"""
-    return wx.Font(size, wx.FONTFAMILY_DEFAULT, style, weight)
+    @staticmethod
+    def create_styled_font(size=GUIConstants.NORMAL_SIZE,
+                           weight=wx.FONTWEIGHT_NORMAL,
+                           style=wx.FONTSTYLE_NORMAL):
+        """Create a styled font"""
+        return wx.Font(size, wx.FONTFAMILY_DEFAULT, style, weight)
 
+    @staticmethod
+    def load_image_preview(image_path, max_size=GUIConstants.PREVIEW_SIZE):
+        """Load and prepare image for preview"""
+        try:
+            img = Image.open(image_path)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
-def load_image_preview(image_path, max_size=GUIConstants.PREVIEW_SIZE):
-    """Load and prepare image for preview"""
-    try:
-        img = Image.open(image_path)
-        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            width, height = img.size
+            wx_image = wx.Image(width, height)
+            wx_image.SetData(img.convert('RGB').tobytes())
 
-        width, height = img.size
-        wx_image = wx.Image(width, height)
-        wx_image.SetData(img.convert('RGB').tobytes())
-
-        return wx.Bitmap(wx_image)
-    except Exception as e:
-        raise Exception(f"Could not load image: {str(e)}")
+            return wx.Bitmap(wx_image)
+        except Exception as e:
+            raise Exception(f"Could not load image: {str(e)}")

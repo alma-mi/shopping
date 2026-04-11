@@ -4,8 +4,7 @@ Handles image selection and search interface
 """
 import wx
 import os
-from base_gui import (GUIConstants, create_styled_button,
-                      create_styled_font, load_image_preview)
+from base_gui import GUIConstants, GUIUtils
 
 
 class SearchGUI:
@@ -27,7 +26,7 @@ class SearchGUI:
         # Search label
         search_label = wx.StaticText(
             search_panel, label="Search Products by Image:")
-        search_label_font = create_styled_font(12, wx.FONTWEIGHT_BOLD)
+        search_label_font = GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD)
         search_label.SetFont(search_label_font)
         search_label.SetForegroundColour(wx.Colour(0, 0, 0))
         search_sizer.Add(search_label, 0, wx.ALL, 8)
@@ -53,7 +52,7 @@ class SearchGUI:
         upload_btn = wx.Button(parent, label="Select Image", size=(100, 30))
         upload_btn.SetBackgroundColour(wx.Colour(0, 102, 204))
         upload_btn.SetForegroundColour(wx.Colour(255, 255, 255))
-        upload_btn.SetFont(create_styled_font(12, wx.FONTWEIGHT_BOLD))
+        upload_btn.SetFont(GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD))
         upload_btn.Bind(wx.EVT_BUTTON, self.main_frame.on_select_image)
         upload_sizer.Add(upload_btn, 0, wx.ALL, 5)
 
@@ -61,7 +60,7 @@ class SearchGUI:
         camera_btn = wx.Button(parent, label="Take Photo", size=(100, 30))
         camera_btn.SetBackgroundColour(wx.Colour(0, 102, 204))
         camera_btn.SetForegroundColour(wx.Colour(255, 255, 255))
-        camera_btn.SetFont(create_styled_font(12, wx.FONTWEIGHT_BOLD))
+        camera_btn.SetFont(GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD))
         camera_btn.Bind(wx.EVT_BUTTON, self.main_frame.on_take_photo)
         upload_sizer.Add(camera_btn, 0, wx.ALL, 5)
 
@@ -69,7 +68,7 @@ class SearchGUI:
         self.image_path_label = wx.StaticText(
             parent, label="No image selected")
         self.image_path_label.SetForegroundColour(wx.Colour(128, 128, 128))
-        self.image_path_label.SetFont(create_styled_font(10))
+        self.image_path_label.SetFont(GUIUtils.create_styled_font(10))
         upload_sizer.Add(
             self.image_path_label,
             0,
@@ -81,7 +80,7 @@ class SearchGUI:
             parent, label="Search by Image", size=(100, 30))
         self.search_btn.SetBackgroundColour(wx.Colour(0, 102, 204))
         self.search_btn.SetForegroundColour(wx.Colour(255, 255, 255))
-        self.search_btn.SetFont(create_styled_font(12, wx.FONTWEIGHT_BOLD))
+        self.search_btn.SetFont(GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD))
         self.search_btn.Bind(wx.EVT_BUTTON, self.main_frame.on_image_search)
         self.search_btn.Enable(False)
         upload_sizer.Add(self.search_btn, 0, wx.ALL, 5)
@@ -120,7 +119,7 @@ class SearchGUI:
     def _load_image_preview(self):
         """Load and display image preview"""
         try:
-            bitmap = load_image_preview(self.selected_image_path)
+            bitmap = GUIUtils.load_image_preview(self.selected_image_path)
             self.image_preview.SetBitmap(bitmap)
         except Exception as e:
             wx.MessageBox(
