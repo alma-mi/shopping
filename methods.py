@@ -4,6 +4,7 @@ Handles authentication, product search, and session management
 """
 import uuid
 import time
+import hashlib
 from constants import (SESSIONS, MAX_IMAGE_SIZE, PARAMS_FIRST, PARAMS_SECOND,
                        ONE, ZERO, IMAGE_CHUNK_SIZE, BYTE_CONVERSION)
 from google_search import google_search_for_product
@@ -34,6 +35,7 @@ class Methods(object):
 
         username = params[MIN_PARAMS]
         password = params[PARAMS_ONE]
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
         # Check credentials using DB helpers
         user_record = get_user(username)
@@ -41,7 +43,7 @@ class Methods(object):
             return json.dumps(
                 {"status": "error", "message": "User does not exist"})
 
-        verified = verify_user(username, password)
+        verified = verify_user(username, hashed_password)
         if not verified:
             return json.dumps(
                 {"status": "error", "message": "Incorrect password"})
@@ -74,6 +76,7 @@ class Methods(object):
 
         username = params[MIN_PARAMS]
         password = params[PARAMS_ONE]
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
         # Check if user already exists
         existing_user = get_user(username)
@@ -81,8 +84,8 @@ class Methods(object):
             return json.dumps({"status": "error",
                                "message": "Username already taken"})
 
-        # Create new user
-        add_user(username, password)
+        # Create new user with hashed password
+        add_user(username, hashed_password)
         return json.dumps({"status": "success",
                            "message": "User created successfully"})
 
