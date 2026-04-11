@@ -23,7 +23,7 @@ EOF = b'EOF'
 
 # Image transfer settings
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB max image size
-SUPPORTED_IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+SUPPORTED_IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
 
 # GUI Window Dimensions
 GUI_WINDOW_WIDTH = 1500
@@ -57,7 +57,7 @@ MAX_DISPLAY_RESULTS = 10
 STAR_RATING_CHAR = "*"
 
 # Protocol/Socket Settings
-PROTOCOL_LENGTH_PREFIX = 4
+PROTOCOL_LENGTH_PREFIX = 10
 SOCKET_CHUNK_SIZE = 4096
 SOCKET_TIMEOUT = 5
 MAX_LISTEN_BACKLOG = 5

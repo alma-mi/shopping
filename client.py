@@ -132,10 +132,8 @@ class ShoppingClient(object):
             image_size = len(image_data)
             protocol.Protocol.send(self.conn, str(image_size))
 
-            # Send image data in chunks
-            for i in range(FIRST, len(image_data), CHUNK_SIZE):
-                chunk = image_data[i:i + CHUNK_SIZE]
-                self.conn[protocol.SOCK].sendall(chunk)
+            # Send image data 
+            protocol.Protocol.send_bin(self.conn, image_data)
 
             # Receive response with search terms and products
             response = protocol.Protocol.recv(self.conn)

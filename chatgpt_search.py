@@ -2,10 +2,12 @@
 ChatGPT Image Analysis for Product Search
 Uses Azure OpenAI GPT-4 Vision API to analyze images and extract search terms
 """
+import io
 import os
 import base64
 from openai import AzureOpenAI
 from dotenv import load_dotenv
+from PIL import Image
 from constants import PARAMS_FIRST, GPT4_MAX_TOKENS, GPT4_TEMPERATURE
 
 PHARAMS_FIRST = PARAMS_FIRST
@@ -26,15 +28,34 @@ class ChatGPTSearchService:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
+    # Formats supported by the OpenAI vision API
+    OPENAI_SUPPORTED_FORMATS = {'jpeg', 'png', 'gif', 'webp'}
+    OPENAI_MIME_TYPES = {
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+    }
+
     def encode_image_bytes_to_base64(self, image_bytes):
         """
-        Encode image bytes to base64 string
+        Encode image bytes to base64 string, converting unsupported
+        formats (e.g. BMP) to PNG first.
         Args:
             image_bytes: Image data as bytes
         Returns:
-            Base64 encoded string of the image
+            tuple: (base64_string, mime_type)
         """
-        return base64.b64encode(image_bytes).decode('utf-8')
+        img = Image.open(io.BytesIO(image_bytes))
+        fmt = (img.format or '').lower()
+        if fmt not in self.OPENAI_SUPPORTED_FORMATS:
+            # Convert to PNG
+            buf = io.BytesIO()
+            img.save(buf, format='PNG')
+            image_bytes = buf.getvalue()
+            fmt = 'png'
+        mime_type = self.OPENAI_MIME_TYPES[fmt]
+        return base64.b64encode(image_bytes).decode('utf-8'), mime_type
 
     def analyze_image_for_products(self, image_path=None, image_bytes=None):
         """
@@ -58,15 +79,17 @@ class ChatGPTSearchService:
                 return client
 
             # Step 2: Encode image to base64
-            base64_image = self._encode_image(image_path, image_bytes)
-            if isinstance(base64_image, tuple):
-                return base64_image
+            encode_result = self._encode_image(image_path, image_bytes)
+            if isinstance(encode_result, tuple) and encode_result[0] is None:
+                return encode_result
+            base64_image, mime_type = encode_result
 
             # Step 3: Get analysis prompt
             prompt = self._get_analysis_prompt()
 
             # Step 4: Call GPT-4 Vision API
-            response = self._call_gpt4_api(client, prompt, base64_image)
+            response = self._call_gpt4_api(client, prompt,
+                                           base64_image, mime_type)
 
             # Step 5: Extract and clean search terms
             search_terms = self._extract_search_terms(response)
@@ -116,10 +139,12 @@ class ChatGPTSearchService:
             image_bytes: Image bytes (optional)
 
         Returns:
-            Base64 string or (None, error_message) tuple
+            (base64_string, mime_type) or (None, error_message) tuple
         """
         if image_path:
-            return self.encode_image_to_base64(image_path)
+            with open(image_path, 'rb') as f:
+                raw = f.read()
+            return self.encode_image_bytes_to_base64(raw)
         elif image_bytes:
             return self.encode_image_bytes_to_base64(image_bytes)
         else:
@@ -144,7 +169,8 @@ class ChatGPTSearchService:
         )
         return prompt
 
-    def _call_gpt4_api(self, client, prompt, base64_image):
+    def _call_gpt4_api(self, client, prompt, base64_image,
+                       mime_type='image/jpeg'):
         """
         Call Azure OpenAI GPT-4 Vision API with image and prompt.
 
@@ -152,6 +178,7 @@ class ChatGPTSearchService:
             client: AzureOpenAI client
             prompt: Analysis prompt text
             base64_image: Base64 encoded image
+            mime_type: MIME type of the image (e.g. 'image/png')
 
         Returns:
             API response
@@ -174,7 +201,7 @@ class ChatGPTSearchService:
                             "type": "image_url",
                             "image_url": {
                                 "url": (
-                                    "data:image/jpeg;base64,"
+                                    f"data:{mime_type};base64,"
                                     f"{base64_image}"
                                 )
                             }

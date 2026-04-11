@@ -185,14 +185,7 @@ class Methods(object):
                 return json.dumps({"status": "error", "message": msg})
 
             # Receive image data
-            image_data = b""
-            while len(image_data) < image_size:
-                chunk = conn[protocol.SOCK].recv(
-                    min(IMAGE_CHUNK_SIZE_VAR,
-                        image_size - len(image_data)))
-                if not chunk:
-                    break
-                image_data += chunk
+            image_data = protocol.Protocol.recv_bin(conn)
 
             if len(image_data) != image_size:
                 exp = image_size
