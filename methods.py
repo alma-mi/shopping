@@ -39,14 +39,12 @@ class Methods(object):
 
         # Check credentials using DB helpers
         user_record = get_user(username)
-        if user_record is None:
-            return json.dumps(
-                {"status": "error", "message": "User does not exist"})
-
-        verified = verify_user(username, hashed_password)
+        verified = user_record is not None and verify_user(
+            username, hashed_password)
         if not verified:
             return json.dumps(
-                {"status": "error", "message": "Incorrect password"})
+                {"status": "error",
+                 "message": "Username or password is incorrect"})
 
         # Create session
         session_id = str(uuid.uuid4())
