@@ -15,7 +15,8 @@ load_dotenv()
 
 
 class ChatGPTSearchService:
-    """Analyzes images with Azure OpenAI GPT-4 Vision to extract product search terms."""
+    """Analyzes images with Azure OpenAI GPT to extract product search
+    terms."""
 
     def encode_image_to_base64(self, image_path):
         """

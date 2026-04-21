@@ -132,7 +132,7 @@ class ShoppingClient(object):
             image_size = len(image_data)
             protocol.Protocol.send(self.conn, str(image_size))
 
-            # Send image data 
+            # Send image data
             protocol.Protocol.send_bin(self.conn, image_data)
 
             # Receive response with search terms and products

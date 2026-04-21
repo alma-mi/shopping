@@ -80,7 +80,8 @@ class SearchGUI:
             parent, label="Search by Image", size=(100, 30))
         self.search_btn.SetBackgroundColour(wx.Colour(0, 102, 204))
         self.search_btn.SetForegroundColour(wx.Colour(255, 255, 255))
-        self.search_btn.SetFont(GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD))
+        self.search_btn.SetFont(
+            GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD))
         self.search_btn.Bind(wx.EVT_BUTTON, self.main_frame.on_image_search)
         self.search_btn.Enable(False)
         upload_sizer.Add(self.search_btn, 0, wx.ALL, 5)
@@ -100,7 +101,7 @@ class SearchGUI:
 
     def _create_image_file_dialog(self):
         """Create file dialog for image selection"""
-        exts = "*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.webp"
+        exts = "*.jpg;*.jpeg;*.png;*.gif;*.webp"
         wildcard = f"Image files ({exts})|{exts}"
 
         return wx.FileDialog(

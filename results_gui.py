@@ -21,7 +21,8 @@ class ResultsGUI:
         # Results label
         results_label = wx.StaticText(
             self.main_frame.main_panel, label="Results:")
-        results_label_font = GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD)
+        results_label_font = GUIUtils.create_styled_font(12,
+                                                         wx.FONTWEIGHT_BOLD)
         results_label.SetFont(results_label_font)
         results_label.SetForegroundColour(wx.Colour(0, 0, 0))
         self.main_frame.main_sizer.Add(results_label, 0,
@@ -99,7 +100,8 @@ class ResultsGUI:
             no_results = wx.StaticText(
                 self.results_panel,
                 label=f"No products found for '{search_terms}'")
-            no_results_font = GUIUtils.create_styled_font(GUIConstants.HEADING_SIZE)
+            no_results_font = GUIUtils.create_styled_font(
+                GUIConstants.HEADING_SIZE)
             no_results.SetFont(no_results_font)
             no_results.SetForegroundColour(GUIConstants.GRAY_COLOR)
             self.results_sizer.Add(no_results, 0, wx.ALIGN_CENTER | wx.ALL, 50)
@@ -122,7 +124,8 @@ class ResultsGUI:
             no_results = wx.StaticText(
                 self.results_panel,
                 label=f"No products found for '{query}'")
-            no_results_font = GUIUtils.create_styled_font(GUIConstants.HEADING_SIZE)
+            no_results_font = GUIUtils.create_styled_font(
+                GUIConstants.HEADING_SIZE)
             no_results.SetFont(no_results_font)
             no_results.SetForegroundColour(GUIConstants.GRAY_COLOR)
             self.results_sizer.Add(no_results, 0, wx.ALIGN_CENTER | wx.ALL, 50)
