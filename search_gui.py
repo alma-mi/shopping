@@ -3,7 +3,6 @@ Search GUI module
 Handles image selection and search interface
 """
 import wx
-import os
 from base_gui import GUIConstants, GUIUtils
 
 
@@ -12,7 +11,6 @@ class SearchGUI:
 
     def __init__(self, main_frame):
         self.main_frame = main_frame
-        self.image_path_label = None
         self.search_btn = None
         self.image_preview = None
         self.selected_image_path = None
@@ -36,7 +34,11 @@ class SearchGUI:
         search_sizer.Add(upload_sizer, 0, wx.ALL, 5)
 
         # Image preview
-        self.image_preview = wx.StaticBitmap(search_panel)
+        self.image_preview = wx.StaticBitmap(
+            search_panel,
+            size=GUIConstants.PREVIEW_SIZE
+        )
+        self.image_preview.SetMinSize(GUIConstants.PREVIEW_SIZE)
         search_sizer.Add(
             self.image_preview, 0, wx.ALL | wx.ALIGN_CENTER, 5)
 
@@ -63,17 +65,6 @@ class SearchGUI:
         camera_btn.SetFont(GUIUtils.create_styled_font(12, wx.FONTWEIGHT_BOLD))
         camera_btn.Bind(wx.EVT_BUTTON, self.main_frame.on_take_photo)
         upload_sizer.Add(camera_btn, 0, wx.ALL, 5)
-
-        # Selected image label
-        self.image_path_label = wx.StaticText(
-            parent, label="No image selected")
-        self.image_path_label.SetForegroundColour(wx.Colour(128, 128, 128))
-        self.image_path_label.SetFont(GUIUtils.create_styled_font(10))
-        upload_sizer.Add(
-            self.image_path_label,
-            0,
-            wx.ALIGN_CENTER_VERTICAL | wx.ALL,
-            5)
 
         # Search button (disabled until image is selected)
         self.search_btn = wx.Button(
@@ -113,8 +104,6 @@ class SearchGUI:
 
     def _update_image_selection(self):
         """Update UI after image is selected"""
-        filename = os.path.basename(self.selected_image_path)
-        self.image_path_label.SetLabel(f"Selected: {filename}")
         self.search_btn.Enable(True)
 
     def _load_image_preview(self):

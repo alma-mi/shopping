@@ -76,6 +76,7 @@ class CameraGUI:
 
                 # Flip frame for mirror effect
                 frame = cv2.flip(frame, FLIP_HORIZONTAL)
+                clean_frame = frame.copy()
                 height, width = frame.shape[:2]
 
                 # Draw capture button
@@ -121,7 +122,7 @@ class CameraGUI:
                 cv2.imshow("Camera - Click Button to Capture", frame)
 
                 if capture_ready[0]:
-                    captured_image = frame
+                    captured_image = clean_frame
                     break
 
                 key = cv2.waitKey(VIDEO_FRAME_DELAY_MS) & 0xFF

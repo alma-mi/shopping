@@ -35,7 +35,7 @@ class GUIConstants:
     # Dimensions
     BUTTON_WIDTH = 200
     BUTTON_HEIGHT = 40
-    PREVIEW_SIZE = (200, 200)
+    PREVIEW_SIZE = (500, 350)
 
 
 class GUIUtils:
@@ -61,12 +61,18 @@ class GUIUtils:
     def load_image_preview(image_path, max_size=GUIConstants.PREVIEW_SIZE):
         """Load and prepare image for preview"""
         try:
-            img = Image.open(image_path)
+            img = Image.open(image_path).convert('RGB')
             img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
-            width, height = img.size
+            # Keep full image visible by centering it inside a fixed preview box.
+            preview_box = Image.new('RGB', max_size, (245, 245, 245))
+            x = (max_size[0] - img.width) // 2
+            y = (max_size[1] - img.height) // 2
+            preview_box.paste(img, (x, y))
+
+            width, height = preview_box.size
             wx_image = wx.Image(width, height)
-            wx_image.SetData(img.convert('RGB').tobytes())
+            wx_image.SetData(preview_box.tobytes())
 
             return wx.Bitmap(wx_image)
         except Exception as e:
